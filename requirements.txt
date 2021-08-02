@@ -1,0 +1,10 @@
+frida
+frida-tools
+jmespath
+colorama
+pandas
+numpy
+pefile
+pycryptodome
+pyOpenSSL
+py7zr

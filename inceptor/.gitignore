@@ -1,0 +1,11 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+wiki
+*.json
+*.7z
+.idea
+temp
+certs/**

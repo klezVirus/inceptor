@@ -1,0 +1,3 @@
+[submodule "inceptor/obfuscators/powershell/chameleon"]
+	path = inceptor/obfuscators/powershell/chameleon
+	url = git@github.com:klezVirus/chameleon.git

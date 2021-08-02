@@ -1,0 +1,7 @@
+venv
+drop
+build
+dist
+*.spec
+.idea
+!metrics/cloc.exe
