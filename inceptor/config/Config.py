@@ -10,6 +10,8 @@ class Config(object):
     def __init__(self, auto_load: bool = True, create_env: bool = True):
         self.config = configparser.ConfigParser(allow_no_value=True, interpolation=configparser.ExtendedInterpolation())
         self.file = os.path.join(get_project_root(), "config", "config.ini")
+        if not os.path.isfile(self.file):
+            self.write_default()
         if auto_load:
             self.load_config()
         if create_env:
@@ -117,8 +119,8 @@ clx86_compiler =
 clx64_compiler = 
 masmx86_compiler = 
 masmx64_compiler = 
-cscx86_compiler = 
-cscx64_compiler = 
+cscx86_compiler = C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe
+cscx64_compiler = C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe
 clangx86_compiler =
 clangx64_compiler =
 llvmx86_compiler = 

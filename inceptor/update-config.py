@@ -17,18 +17,18 @@ NET_FW = "https://dotnet.microsoft.com/download/dotnet-framework"
 LLVM_LINK = "https://github.com/klezVirus/obfuscator/releases/download/v1.0.0/llvm-clang-v1.0.0.7z"
 
 
-def report(count, blockSize, totalSize):
-    percent = int(count * blockSize * 100 / totalSize)
+def report(count, block_size, total_size):
+    percent = int(count * block_size * 100 / total_size)
     sys.stdout.write(f"\r{percent}% complete")
     sys.stdout.flush()
 
 
 def download_llvm():
-    sys.stdout.write('\rFetching LLVM-Obfuscator ...\n')
+    sys.stdout.write('\r  [*] Fetching LLVM-Obfuscator ...\n')
 
     destination = tempfile.NamedTemporaryFile(delete=False, dir=tempfile.gettempdir(), suffix=".7z").name
     request.urlretrieve(LLVM_LINK, destination, reporthook=report)
-    sys.stdout.write(f"\rDownload complete, saved as {destination}\n")
+    sys.stdout.write(f"\r  [+] Download complete, saved as {destination}\n")
     sys.stdout.flush()
     return destination
 
@@ -219,9 +219,9 @@ def update_llvm_compiler(max_recurse=1):
         while choice.lower() not in ["y", "n"]:
             try:
                 choice = input("[Y|N] > ")
-                if choice == "n":
+                if choice.lower() == "n":
                     download = False
-                elif choice == "y":
+                elif choice.lower() == "y":
                     download = True
             except:
                 continue
