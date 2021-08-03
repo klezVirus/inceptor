@@ -76,8 +76,8 @@ class EncoderChain:
             current_in = self.chain[k].decoder_in
             current_out = self.chain[k].decoder_out[0]
             if previous_out and (previous_out != current_in[0] or previous_out not in current_in):
-                print(current_in)
-                print(previous_out)
+                if Config().get("DEBUG", "encoders"):
+                    print(f"Node mismatch: {previous_out} -> {current_in}")
                 return False
             previous_out = current_out
         return True
