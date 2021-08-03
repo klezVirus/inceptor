@@ -66,20 +66,25 @@ class EncoderChain:
             return True
         if self.chain[0].decoder_out[0] != bytes:
             return False
-        #if self.chain[self.last].decoder_in[0] != str and language == Language.CSHARP:
+        # if self.chain[self.last].decoder_in[0] != str and language == Language.CSHARP:
         #    return False
         # if self.chain[self.last].decoder_in[0] != bytes and language == Language.POWERSHELL:
         #    return False
+        previous = None
         if self.chain[0].decoder_in[0] != bytes and language == Language.POWERSHELL:
             return False
         for k in list(self.chain.keys())[::-1]:
             current_in = self.chain[k].decoder_in
             current_out = self.chain[k].decoder_out[0]
             if previous_out and (previous_out != current_in[0] or previous_out not in current_in):
-                if Config().get("DEBUG", "encoders"):
-                    print(f"Node mismatch: {previous_out} -> {current_in}")
+                if Config().get_boolean("DEBUG", "encoders"):
+                    print(rf"""[-] Node mismatch.
+   - Previous: {previous.__class__.__name__:15} - Output        : {previous_out} 
+   - Current : {self.chain[k].__class__.__name__:15} - Accepted Input: {current_in}"""
+                          )
                 return False
             previous_out = current_out
+            previous = self.chain[k]
         return True
 
     def translate(self, language=Language.CSHARP):
