@@ -321,7 +321,6 @@ optional arguments:
 * [Inceptor - Bypass AV-EDR solutions combining well known techniques](https://github.com/klezVirus/inceptor/blob/main/slides/Inceptor%20-%20Bypass%20AV-EDR%20solutions%20combining%20well%20known%20techniques.pdf)
 * [A tale of EDR bypass methods](https://s3cur3th1ssh1t.github.io/A-tale-of-EDR-bypass-methods)
 
-
 [1]: https://github.com/phra/PEzor
 [2]: https://github.com/forrest-orr/artifacts-kit
 [3]: https://twitter.com/TheRealWover
