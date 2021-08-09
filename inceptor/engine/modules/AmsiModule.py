@@ -25,7 +25,7 @@ class AmsiModule(TemplateModule):
         language = kwargs["kwargs"]["language"]
         arch = kwargs["kwargs"]["arch"]
 
-        libraries = None
+        libraries = []
         components = None
         bypass_mode = Config().get('MISC', 'bypass_mode')
 
@@ -55,7 +55,8 @@ class AmsiModule(TemplateModule):
                 "import": import_name,
                 "class": class_name,
                 "function": function_name,
-                "dll": dll
+                "dll": dll,
+                "arch": arch
             }
 
             try:
@@ -73,6 +74,7 @@ class AmsiModule(TemplateModule):
             libraries = [f"{dll}"]
         else:
             raise ModuleNotCompatibleException()
+
         super().__init__(name="AmsiBypass", libraries=libraries, components=components, arch=arch)
 
     def generate(self, **kwargs):
@@ -84,7 +86,8 @@ class AmsiModule(TemplateModule):
             _filter=_filter
         )
         if kwargs["kwargs"]["dinvoke"]:
-            template.add_module(TemplateModule.from_name("dinvoke", kwargs=kwargs["kwargs"]))
+            module = TemplateModule.from_name("dinvoke", kwargs=kwargs["kwargs"])
+            template.add_module(module)
 
         for k, v in zip(
             ["import", "class", "function"],
@@ -95,7 +98,6 @@ class AmsiModule(TemplateModule):
                 code=kwargs["kwargs"][k],
                 placeholder=v
             )
-
         template.process_modules()
         return template
 

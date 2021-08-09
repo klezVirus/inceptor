@@ -30,7 +30,7 @@ class DinvokeModule(TemplateModule):
                 libraries = [str(Config().get_path("DIRECTORIES", "libs").parent.joinpath("private", arch.value, "DInvoke.dll"))]
         elif language == Language.CPP:
             components = []
-            libraries = None
+            libraries = []
         else:
             raise ModuleNotCompatibleException()
         super().__init__(name="Dinvoke", libraries=libraries, components=components)
