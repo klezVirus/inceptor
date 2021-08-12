@@ -146,7 +146,7 @@ and update the configuration accordingly. It might be required to install Micros
 and Visual Studio, `update-config.py` will guide the user on how to install the required dependencies.
 
 ```
-git clone --recurse https://github.com/klezVirus/inceptor.git
+git clone --recursive https://github.com/klezVirus/inceptor.git
 cd inceptor
 virtualenv venv
 venv\Scripts\activate.bat
