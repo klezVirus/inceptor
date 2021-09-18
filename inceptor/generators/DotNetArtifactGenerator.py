@@ -9,6 +9,7 @@ from datetime import datetime
 from compilers.CscCompiler import CscCompiler
 from compilers.ILPacker import ILPacker
 from config.Config import Config
+from converters.Donut import ArchitectureMismatch
 from converters.TransformerFactory import TransformerFactory
 from encoders.EncoderChain import EncoderChain
 from encoders.HexEncoder import HexEncoder
@@ -39,12 +40,14 @@ class DotNetArtifactGenerator(Generator):
                  process: str = None,
                  arch: str = None,
                  sign: bool = False,
-                 modules: list = None
+                 modules: list = None,
+                 hide_window: bool = False
                  ):
         super().__init__(file=file, chain=chain)
         if chain.is_empty():
             chain.push(HexEncoder())
         config = Config()
+        self.hide_window = hide_window
         self.sgn = sgn
         self.obfuscate = obfuscate
         self.sign = sign
@@ -161,6 +164,8 @@ class DotNetArtifactGenerator(Generator):
         self.compiler.default_exe_args(outfile=self.outfiles["temp"])
         if self.dll:
             self.compiler.default_dll_args(outfile=self.outfiles["temp"])
+        elif self.hide_window:
+            self.compiler.hide_window()
         self.refresh_libraries()
         self.compiler.compile(self.writer.source_files)
         if not os.path.isfile(self.outfiles['temp']):
@@ -217,8 +222,11 @@ class DotNetArtifactGenerator(Generator):
     def generate(self):
         try:
             self.generate_wrapped()
+        except ArchitectureMismatch as e:
+            Console.auto_line(f"[-] {e}")
         except:
             traceback.print_exc()
+        finally:
             self.clean()
 
     def generate_wrapped(self):

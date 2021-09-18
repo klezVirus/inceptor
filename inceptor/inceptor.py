@@ -91,6 +91,9 @@ inceptor: A Windows-based PE Packing framework designed to help
     native_parser.add_argument(
         '--delay', required=False, default=None, type=int, help='Add a delay of n seconds before execution')
     native_parser.add_argument(
+        '-hw', '--hide-window', required=False, action='store_true',
+        help='Remove the starting console window when the executable is launched')
+    native_parser.add_argument(
         'binary',
         help='Binary file to convert (EXE or RAW for Vanilla Injection)')
 
@@ -131,6 +134,9 @@ inceptor: A Windows-based PE Packing framework designed to help
     dotnet_parser.add_argument(
         '--delay', required=False, default=None, type=int,
         help='Add a delay of n seconds before execution (requires Delay module)')
+    dotnet_parser.add_argument(
+        '-hw', '--hide-window', required=False, action='store_true',
+        help='Remove the starting console window when the executable is launched')
     dotnet_parser.add_argument(
         'binary',
         help='Binary file to convert (exe to perform PE Injection, DLL for RDI and RAW for Vanilla Injection)')
@@ -233,7 +239,8 @@ inceptor: A Windows-based PE Packing framework designed to help
                                             sign=args.sign,
                                             exports=args.exports,
                                             compiler=args.compiler,
-                                            obfuscate=args.obfuscate)
+                                            obfuscate=args.obfuscate,
+                                            hide_window=args.hide_window)
 
     elif action == "dotnet":
         args = dotnet_parser.parse_args(args=sys.argv[start:])
@@ -250,7 +257,8 @@ inceptor: A Windows-based PE Packing framework designed to help
                                             sgn=args.sgn,
                                             delay=args.delay,
                                             arch=args.arch,
-                                            sign=args.sign)
+                                            sign=args.sign,
+                                            hide_window=args.hide_window)
     elif action == "powershell":
         args = powershell_parser.parse_args(args=sys.argv[start:])
         if filetype not in ["raw", "exe"] or (filetype == "exe" and not isDotNet(binary_abs_path)):

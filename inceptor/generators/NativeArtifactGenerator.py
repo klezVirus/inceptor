@@ -34,10 +34,12 @@ class NativeArtifactGenerator(Generator):
                  obfuscate: bool = False,
                  exports: str = None,
                  compiler: str = "cl",
-                 modules: list = None
+                 modules: list = None,
+                 hide_window: bool = False
                  ):
         super().__init__(file=file, chain=chain)
         self.arch = arch
+        self.hide_window = hide_window
         config = Config()
         self.placeholder = config.get("PLACEHOLDERS", "SHELLCODE")
         artifacts_path = config.get_path("DIRECTORIES", "ARTIFACTS")
@@ -59,15 +61,8 @@ class NativeArtifactGenerator(Generator):
         else:
             self.transformer = TransformerFactory.from_file(self.file)
 
-        # EXE Writer
-        self.exe_writer = CodeWriter(language=Language.CPP,
-                                     pinject=pinject,
-                                     process=process,
-                                     delay=delay,
-                                     modules=modules,
-                                     _filter=Filter(exclude=["dll"]),
-                                     arch=arch)
-        self.exe_writer.load_chain(chain=self.chain)
+        self.exe_writer = None
+        self.dll_writer = None
         working_directory = Config().get_path("DIRECTORIES", "WRITER")
 
         basename = os.path.basename(os.path.splitext(outfile)[0])
@@ -81,20 +76,32 @@ class NativeArtifactGenerator(Generator):
             "exe-final": outfile,
             "dll-final": f"{basename}.dll",
         }
-
         if obfuscate:
             compiler = "llvm"
         self.compiler = Compiler.from_name(compiler, args={}, arch=self.arch)
-        self.compiler.default_exe_args(self.outfiles["exe-temp"])
+
+        if not self.dll:
+            self.compiler.default_exe_args(self.outfiles["exe-temp"])
+
+            # EXE Writer
+            self.exe_writer = CodeWriter(language=Language.CPP,
+                                         pinject=pinject,
+                                         process=process,
+                                         delay=delay,
+                                         modules=modules,
+                                         _filter=Filter(exclude=["dll"]),
+                                         arch=arch)
+            self.exe_writer.load_chain(chain=self.chain)
 
         # DLL Writer
-        self.dll_writer = None
-        if self.dll:
-            _dll_filter = Filter(include=["dll"], exclude=["write-execute"])
+        elif self.dll:
+            _dll_filter = Filter(include=["dll"])
 
             self.dll_writer = CodeWriter(
                 language=Language.CPP,
-                template=config.get_path("DIRECTORIES", "DLL"),
+                pinject=pinject,
+                process=process,
+                delay=delay,
                 _filter=_dll_filter,
                 modules=modules
             )
@@ -152,7 +159,8 @@ class NativeArtifactGenerator(Generator):
         self.exe_writer.template.process_modules()
         self.compiler.default_exe_args(self.outfiles["exe-temp"])
         self.compiler.set_libraries(libs=self.exe_writer.template.libraries)
-
+        if self.hide_window:
+            self.compiler.hide_window()
         status = self.compiler.compile([self.exe_writer.outfile] + self.obj_files)
 
         if not os.path.isfile(self.outfiles["exe-temp"]):
@@ -163,9 +171,11 @@ class NativeArtifactGenerator(Generator):
         self.dll_payload = py_bin2sh(self.outfiles["exe-temp"])
 
     def clean(self):
-        artifacts = [self.exe_writer.outfile]
+        artifacts = []
         if self.dll:
             artifacts.append(self.dll_writer.outfile)
+        else:
+            artifacts.append(self.exe_writer.outfile)
         for file in artifacts:
             os.unlink(file)
         base_paths = [".", "artifacts", "temp"]
@@ -231,8 +241,9 @@ class NativeArtifactGenerator(Generator):
         shellcode = self.chain.encode(shellcode_bytes)
         step += 1
         template = self.exe_writer.template.template_name if not self.dll else self.dll_writer.template.template_name
+        temporary_file = f".\\temp\\{os.path.basename(self.exe_writer.outfile)}" if self.exe_writer else self.dll_writer.outfile
         Console.auto_line(f"[*] Phase {step}: Generating source files using {template}")
-        Console.auto_line(f"  [>] Phase {step}.{substep}: Writing CPP file in .\\temp\\{os.path.basename(self.exe_writer.outfile)}")
+        Console.auto_line(f"  [>] Phase {step}.{substep}: Writing CPP file in {temporary_file}")
         time.sleep(1)
         step += 1
         if not self.dll:
