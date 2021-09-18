@@ -36,6 +36,9 @@ class Compiler(ABC):
     def set_libraries(self, libs: list):
         pass
 
+    def hide_window(self):
+        return False
+
     @abstractmethod
     def add_include_directory(self, directory):
         pass
@@ -60,8 +63,9 @@ class Compiler(ABC):
                 cmd = f"{cmd} & {self.suffix_cmd}"
             if Config().get_boolean("DEBUG", "COMPILERS"):
                 print(cmd)
-            output = subprocess.check_output(cmd)
-            # print(output.decode())
+            output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+            if Config().get_boolean("DEBUG", "COMPILERS"):
+                print(output.decode())
         except subprocess.CalledProcessError as e:
             for line in e.output.decode().split("\n"):
                 if re.search(r"error", line):
