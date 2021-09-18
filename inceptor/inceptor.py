@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import shutil
 import sys
 import argparse
 import time
@@ -10,9 +11,12 @@ from engine.modules.TemplateModule import TemplateModule
 from generators.DotNetArtifactGenerator import DotNetArtifactGenerator
 from generators.NativeArtifactGenerator import NativeArtifactGenerator
 from generators.PowerShellArtifactGenerator import PowerShellArtifactGenerator
+from utils.console import Console
 from utils.logo import get_logo
 from utils.ThreatCheck import ThreatCheck
 from utils.utils import isDotNet
+
+HISTORY = "history.txt"
 
 
 def i_do_not_remember():
@@ -192,6 +196,9 @@ inceptor: A Windows-based PE Packing framework designed to help
 
     filename, ext = os.path.splitext(args.binary)
     filetype = ext.replace(".", "")
+    if filetype == "bin":
+        Console.warn_line("[WARNING] File extension '.bin' is not supported, assumed '.raw'")
+        shutil.copy(args.binary, filename + ".raw")
 
     binary_abs_path = os.path.abspath(args.binary)
     chain = EncoderChain.from_list(args.encoder)
@@ -202,6 +209,10 @@ inceptor: A Windows-based PE Packing framework designed to help
         args.modules.append("delay")
 
     modules = [m.strip() for m in set(args.modules)]
+
+    # Let's record the last command for other uses
+    with open(HISTORY, "w") as history:
+        history.write(" ".join(sys.argv))
 
     if action == "native":
         args = native_parser.parse_args(args=sys.argv[start:])
