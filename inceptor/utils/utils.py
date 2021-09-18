@@ -3,12 +3,42 @@ import os
 import re
 import secrets
 import subprocess
+import sys
 import tempfile
 from binascii import hexlify, unhexlify
+from enum import Enum
 from random import random, randint
 
 from pefile import *
 from pathlib import Path
+import struct
+
+from enums.Architectures import Arch
+
+
+class ImageFileMachine(Enum):
+    IMAGE_FILE_MACHINE_I386 = 332
+    IMAGE_FILE_MACHINE_IA64 = 512
+    IMAGE_FILE_MACHINE_AMD64 = 34404
+
+    @staticmethod
+    def from_bytes(_bytes: bytes):
+        if len(_bytes) > 2:
+            _bytes = _bytes[:2]
+        machine = struct.unpack("<H", _bytes)[0]
+        if machine == ImageFileMachine.IMAGE_FILE_MACHINE_I386.value:
+            return Arch.x86
+        elif machine == ImageFileMachine.IMAGE_FILE_MACHINE_IA64.value:
+            return Arch.x64
+        elif machine == ImageFileMachine.IMAGE_FILE_MACHINE_AMD64.value:
+            return Arch.x64
+        else:
+            _hex_value = hexlify(struct.pack('H', machine)).decode()
+            raise ValueError(
+                f"Unknown architecture.\n"
+                f"  Raw: {struct.pack('H', machine)}\n"
+                f"  Hex: {_hex_value[:2]} {_hex_value[2:]}"
+            )
 
 
 def get_project_root() -> Path:
@@ -120,6 +150,18 @@ def static_random_ascii_string(min_size=None, max_size=None):
     if not max_size:
         max_size = 10
     return ''.join(secrets.choice(string.ascii_letters) for _ in range(randint(min_size, max_size)))
+
+
+def detect_arch(file):
+    f = open(file, "rb").read()
+
+    if f[:2] != b"MZ":
+        print("[-] Unknown file format")
+        sys.exit(1)
+    else:
+        header_offset = struct.unpack("<L", f[60:64])[0]
+        raw = f[header_offset + 4:header_offset + 6]
+        return ImageFileMachine.from_bytes(raw)
 
 
 if __name__ == '__main__':
