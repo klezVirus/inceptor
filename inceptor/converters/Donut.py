@@ -6,10 +6,16 @@ from utils.console import Console
 from utils.utils import *
 
 
+class ArchitectureMismatch(Exception):
+    def __init__(self, msg):
+        super().__init__(msg)
+
+
 class Donut(Transformer):
     def __init__(self):
         self.donut = str(Config().get_path("DIRECTORIES", "libs").joinpath("donut.exe"))
-        self.args = "-e3 -a2 -b1 "
+        self.args = "-e3 -b1 "
+        self.arch = Arch.x64
         super().__init__()
         self.filetype = "exe"
         self.output_path = Config().get_path("DIRECTORIES", "writer")
@@ -22,6 +28,10 @@ class Donut(Transformer):
             sys.exit(1)
         filename = os.path.basename(os.path.splitext(target)[0])
         target = Path(target).absolute()
+        if detect_arch(target) != self.arch:
+            raise ArchitectureMismatch(
+                f"The target binary is {detect_arch(target).value}, while donut is running as {self.arch.value}"
+            )
         converted = str(self.output_path.joinpath(f"{filename}.{self.output_file_ext}"))
         try:
             cmd = f'"{self.donut}" {self.args} -f1 "{target}" -o "{converted}"'
@@ -48,7 +58,10 @@ class Donut(Transformer):
     def set_architecture(self, arch="x64", tool_arch=None):
         if arch == "x86" or tool_arch == "x86":
             self.args += "-a1 "
+            self.arch = Arch.x86
         if arch == "x64" or tool_arch == "x64":
             self.args += "-a2 "
+            self.arch = Arch.x64
         elif arch == "anycpu" and not tool_arch:
             self.args += "-a3 "
+            self.arch = Arch.Any
