@@ -1,4 +1,5 @@
 from compilers.Compiler import Compiler
+from compilers.CompilerExceptions import OperationNotSupported
 from config.Config import Config
 
 
@@ -15,6 +16,7 @@ class CscCompiler(Compiler):
 
     def default_exe_args(self, outfile):
         self.args = {
+            "/target": "exe",
             "/platform": self.arch,
             "/unsafe": None,
             "/out": f'"{outfile}"'
@@ -28,6 +30,15 @@ class CscCompiler(Compiler):
             "/out": f'"{outfile}"'
         }
         # "/optimize-": None,
+
+    def hide_window(self):
+        if self.args["/target"] == "exe":
+            self.args["/target"] = "winexe"
+        else:
+            raise OperationNotSupported(
+                "DLLs don't support hidden windows at compiler level. Consider using SW_HIDE in the template"
+            )
+        return True
 
     def set_outfile(self, outfile):
         self.args["/out"] = f'"{outfile}"'

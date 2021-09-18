@@ -4,6 +4,7 @@ import secrets
 import subprocess
 
 from compilers.Compiler import Compiler
+from compilers.CompilerExceptions import OperationNotSupported
 from config.Config import Config
 
 
@@ -104,16 +105,32 @@ class LlvmCompiler(Compiler):
         }
         self.args = {**default_cl_args, **self.llvm_args()}
 
+    def hide_window(self):
+        dll = "/D \"BUILD_DLL\""
+        console = "/D \"_CONSOLE\""
+        if console in self.args.keys():
+            self.args.pop(console)
+            self.set_linker_options(other="/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+        elif dll in self.args.keys():
+            raise OperationNotSupported(
+                "DLLs don't support hidden windows at compiler level. Consider using SW_HIDE in the template"
+            )
+        return True
+
     def add_include_directory(self, directory):
         self.args[f'/I "{directory}"'] = None
 
     def set_libraries(self, libs: list):
         self.set_linker_options(libraries=libs)
 
-    def set_linker_options(self, outfile=None, libraries: list = None):
-        self.aargs = f'/link /DYNAMICBASE {self.format_libraries(libraries=libraries)}'
+    def set_linker_options(self, outfile=None, libraries: list = None, other=""):
+        if not self.aargs or self.aargs == "":
+            self.aargs = f'/link '
+        if libraries:
+            self.aargs = f' /DYNAMICBASE {self.format_libraries(libraries=libraries)}'
         if outfile:
             self.aargs += f' /OUT "{outfile}"'
+        self.aargs += f" {other}"
 
     def llvm_args(self):
         return {
