@@ -4,6 +4,7 @@ import subprocess
 import time
 import traceback
 from datetime import datetime
+from pathlib import Path
 
 from compilers.Compiler import CompilerException, Compiler
 from config.Config import Config
@@ -34,6 +35,9 @@ class NativeArtifactGenerator(Generator):
                  obfuscate: bool = False,
                  exports: str = None,
                  compiler: str = "cl",
+                 classname: str = None,
+                 function: str = None,
+                 params: str = None,
                  modules: list = None,
                  hide_window: bool = False
                  ):
@@ -60,6 +64,17 @@ class NativeArtifactGenerator(Generator):
             self.transformer = TransformerFactory.from_name(transformer)
         else:
             self.transformer = TransformerFactory.from_file(self.file)
+
+        # If the loader is sRDI, we'll need a class / function to convert
+        kwargs = {"classname": classname, "function": function}
+        self.transformer.set_additional_arguments(kwargs={**kwargs})
+
+        self.need_parameter_module = False
+        try:
+            self.transformer.add_parameters(params=params)
+        except:
+            # print(f"[-] Warning: Transformer {self.transformer.__class__.__name__} does not support parameters")
+            self.need_parameter_module = True
 
         self.exe_writer = None
         self.dll_writer = None
@@ -177,7 +192,7 @@ class NativeArtifactGenerator(Generator):
         else:
             artifacts.append(self.exe_writer.outfile)
         for file in artifacts:
-            os.unlink(file)
+            Path(file).unlink(missing_ok=True)
         base_paths = [".", "artifacts", "temp"]
         for base_path in base_paths:
             wildcards = [
@@ -210,8 +225,11 @@ class NativeArtifactGenerator(Generator):
     def generate(self):
         try:
             self.generate_wrapped()
-        except:
+        except SystemExit:
+            pass
+        except Exception as e:
             traceback.print_exc()
+        finally:
             self.clean()
 
     def generate_wrapped(self):

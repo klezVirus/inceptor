@@ -5,6 +5,7 @@ import subprocess
 import sys
 
 from config.Config import Config
+from converters.TransfomerExceptions import ConversionError
 from converters.Transformer import Transformer
 from utils.console import Console
 from utils.utils import *
@@ -24,7 +25,12 @@ class Pe2sh(Transformer):
         target_file_name, target_file_ext = os.path.splitext(target)
         outfile = str(self.output_path.joinpath(os.path.basename(target_file_name)))
         try:
-            output = subprocess.check_output(f'"{self.pe2sh}" "{target}" "{outfile}.shc{target_file_ext}"')
+            cmd = f'"{self.pe2sh}" "{target}" "{outfile}.shc{target_file_ext}"'
+            if self.debug:
+                Console.auto_line(f"  [>] Pe2Sh cmd line: {cmd}")
+            output = subprocess.check_output(cmd)
+            if self.debug:
+                Console.auto_line(output.decode())
         except subprocess.CalledProcessError as e:
             output = e.output
             Console.fail_line(output.decode())
@@ -32,8 +38,7 @@ class Pe2sh(Transformer):
             Console.warn_line("  " + re.search(rb"\[WARNING\].*", output)[0].decode().strip())
             Console.warn_line(f"  [WARNING] {target.split(chr(92))[-1]} may not work in .NET")
         if not re.search(rb"\[\+\]\sSaved\sas\:", output):
-            Console.auto_line(f"[-] Failed to convert {target}")
-            sys.exit(1)
+            raise ConversionError(f"Failed to convert {target}")
         converted = f"{target_file_name}.shc{target_file_ext}"
         if not os.path.isfile(converted):
             Console.auto_line(f"[-] Failed to locate converted file: {converted}")

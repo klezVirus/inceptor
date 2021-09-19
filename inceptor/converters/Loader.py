@@ -4,6 +4,7 @@ import re
 import subprocess
 import sys
 
+from config.Config import Config
 from converters.Transformer import Transformer
 
 

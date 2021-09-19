@@ -22,6 +22,9 @@ class PowerShellArtifactGenerator(Generator):
                  sgn: bool = False,
                  pinject: bool = False,
                  process: str = None,
+                 classname: str = None,
+                 params: str = None,
+                 function: str = None,
                  obfuscate: bool = False,
                  modules: list = None
                  ):
@@ -37,6 +40,18 @@ class PowerShellArtifactGenerator(Generator):
             self.transformer = TransformerFactory.from_name(transformer)
         else:
             self.transformer = TransformerFactory.from_file(self.file)
+
+        # If the loader is sRDI, we'll need a class / function to convert
+        kwargs = {"classname": classname, "function": function}
+        self.transformer.set_additional_arguments(kwargs={**kwargs})
+
+        self.need_parameter_module = False
+        try:
+            self.transformer.add_parameters(params=params)
+        except:
+            # print(f"[-] Warning: Transformer {self.transformer.__class__.__name__} does not support parameters")
+            self.need_parameter_module = True
+
         self.writer = CodeWriter(
             file=file,
             modules=modules,

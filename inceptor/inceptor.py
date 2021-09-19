@@ -63,6 +63,10 @@ inceptor: A Windows-based PE Packing framework designed to help
     native_parser.add_argument(
         '-a', '--compiler-args', required=False, type=str, default=None, help='Compiler arguments')
     native_parser.add_argument(
+        '--classname', required=False, type=str, default=None, help='Class name <namespace.class> (required for .NET DLLs)')
+    native_parser.add_argument(
+        '--function', required=False, type=str, default=None, help='Function name (required for DLLs)')
+    native_parser.add_argument(
         '--exports', required=False, type=str, default=None, help='Definition file with DLL exported function')
     native_parser.add_argument(
         '-e', '--encoder', action='append', required=False, default=None, help='Encoder(s) to be used')
@@ -123,6 +127,10 @@ inceptor: A Windows-based PE Packing framework designed to help
     dotnet_parser.add_argument(
         '-p', '--params', required=False, type=str, default=None, help='Params to pass to the wrapped .NET executable')
     dotnet_parser.add_argument(
+        '--classname', required=False, type=str, default=None, help='Class name <namespace.class> (required for .NET DLLs)')
+    dotnet_parser.add_argument(
+        '--function', required=False, type=str, default=None, help='Function name (required for DLLs)')
+    dotnet_parser.add_argument(
         '--arch', required=False, type=str, choices=["x86", "x64", "anycpu", "anycpu-x86", "anycpu-x64"],
         default="x64", help=' Target Architecture')
     dotnet_parser.add_argument(
@@ -153,6 +161,10 @@ inceptor: A Windows-based PE Packing framework designed to help
         help='Shellcode Transformer')
     powershell_parser.add_argument(
         '-e', '--encoder', action='append', required=False, default=None, help='Encoder(s) to be used')
+    powershell_parser.add_argument(
+        '--classname', required=False, type=str, default=None, help='Class name <namespace.class> (required for .NET DLLs)')
+    powershell_parser.add_argument(
+        '--function', required=False, type=str, default=None, help='Function name (required for DLLs)')
     powershell_parser.add_argument(
         '--delay', required=False, default=None, type=int, help='Add a delay of n seconds before execution')
     powershell_parser.add_argument(
@@ -220,11 +232,16 @@ inceptor: A Windows-based PE Packing framework designed to help
     with open(HISTORY, "w") as history:
         history.write(" ".join(sys.argv))
 
+    if filetype == "dll" and isDotNet(binary_abs_path) and not (args.function and args.classname):
+        Console.auto_line("[-] .NET DLLs require to specify both class and method names")
+        sys.exit(1)
+
+    elif filetype == "dll" and not isDotNet(binary_abs_path) and not args.function:
+        Console.auto_line("[-] Native DLLs require to specify an exported function")
+        sys.exit(1)
+
     if action == "native":
         args = native_parser.parse_args(args=sys.argv[start:])
-        if filetype not in ["raw", "exe"] or isDotNet(binary_abs_path):
-            print("[-] The native loader can operate on RAW and native EXE files only")
-            sys.exit(1)
         generator = NativeArtifactGenerator(binary_abs_path,
                                             chain=chain,
                                             outfile=args.outfile,
@@ -240,7 +257,10 @@ inceptor: A Windows-based PE Packing framework designed to help
                                             exports=args.exports,
                                             compiler=args.compiler,
                                             obfuscate=args.obfuscate,
-                                            hide_window=args.hide_window)
+                                            hide_window=args.hide_window,
+                                            classname=args.classname,
+                                            function=args.function
+                                            )
 
     elif action == "dotnet":
         args = dotnet_parser.parse_args(args=sys.argv[start:])
@@ -258,7 +278,11 @@ inceptor: A Windows-based PE Packing framework designed to help
                                             delay=args.delay,
                                             arch=args.arch,
                                             sign=args.sign,
-                                            hide_window=args.hide_window)
+                                            hide_window=args.hide_window,
+                                            classname = args.classname,
+                                            function = args.function
+                                            )
+
     elif action == "powershell":
         args = powershell_parser.parse_args(args=sys.argv[start:])
         if filetype not in ["raw", "exe"] or (filetype == "exe" and not isDotNet(binary_abs_path)):
@@ -274,7 +298,10 @@ inceptor: A Windows-based PE Packing framework designed to help
                                                 pinject=args.pinject,
                                                 process=args.process,
                                                 arch=args.arch,
-                                                obfuscate=args.obfuscate)
+                                                obfuscate=args.obfuscate,
+                                                classname = args.classname,
+                                                function = args.function
+                                            )
     else:
         raise NotImplementedError(f"[-] Invalid action supplied")
 

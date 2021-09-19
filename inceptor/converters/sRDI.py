@@ -11,7 +11,7 @@ class sRDI(Transformer):
     def __init__(self):
         super().__init__()
         self.flags = 0 | 0x1 | 0x4 | 30 << 16
-        self.function = "ExecutePayload"
+        self.function = "DllMain"
         self.args = b"test"
         self.filetype = "dll"
 
@@ -494,3 +494,13 @@ class sRDI(Transformer):
         flags = self.flags
         converted = sRDI.ConvertToShellcode(dll, sRDI.HashFunctionName(self.function), self.args, flags)
         return converted
+
+    def set_additional_arguments(self, **kwargs):
+        if "function" in kwargs['kwargs'].keys():
+            function = kwargs['kwargs']['function']
+            if function and function != "":
+                self.function = function
+        if "params" in kwargs['kwargs'].keys():
+            params = kwargs['kwargs']['params']
+            if params and params != "":
+                self.args = params

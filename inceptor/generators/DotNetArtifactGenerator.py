@@ -10,6 +10,7 @@ from compilers.CscCompiler import CscCompiler
 from compilers.ILPacker import ILPacker
 from config.Config import Config
 from converters.Donut import ArchitectureMismatch
+from converters.TransfomerExceptions import ConversionError
 from converters.TransformerFactory import TransformerFactory
 from encoders.EncoderChain import EncoderChain
 from encoders.HexEncoder import HexEncoder
@@ -39,6 +40,8 @@ class DotNetArtifactGenerator(Generator):
                  pinject: bool = False,
                  process: str = None,
                  arch: str = None,
+                 classname: str = None,
+                 function: str = None,
                  sign: bool = False,
                  modules: list = None,
                  hide_window: bool = False
@@ -81,6 +84,11 @@ class DotNetArtifactGenerator(Generator):
             self.transformer = TransformerFactory.from_file(file=file)
 
         self.transformer.set_architecture(arch=self.arch)
+
+        # If the loader is sRDI, we'll need a class / function to convert
+        kwargs = {"classname": classname, "function": function}
+        self.transformer.set_additional_arguments(kwargs={**kwargs})
+
         self.need_parameter_module = False
         try:
             self.transformer.add_parameters(params=params)
@@ -222,8 +230,10 @@ class DotNetArtifactGenerator(Generator):
     def generate(self):
         try:
             self.generate_wrapped()
-        except ArchitectureMismatch as e:
+        except (ConversionError, ArchitectureMismatch) as e:
             Console.auto_line(f"[-] {e}")
+        except SystemExit:
+            pass
         except:
             traceback.print_exc()
         finally:
