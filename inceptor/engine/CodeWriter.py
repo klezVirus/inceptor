@@ -36,6 +36,7 @@ class CodeWriter:
         dinvoke = len([m for m in modules if m.lower() == "dinvoke"]) > 0
         syscalls = len([m for m in modules if m.lower() == "syscalls"]) > 0
 
+        self.arch = Arch.from_string(arch)
         kwargs = {
             "language": language,
             "seconds": delay,
@@ -43,7 +44,7 @@ class CodeWriter:
             "syscalls": syscalls,
             "process": process,
             "pinject": pinject,
-            "arch": Arch.from_string(arch)
+            "arch": self.arch
         }
 
         modules_objects = []
@@ -81,37 +82,6 @@ class CodeWriter:
 
         self.load_modules(modules=modules_objects)
 
-        # if delay and delay > 0:
-        #     self.load_module(DelayModule(language=language, seconds=delay),
-        #                      commit=(not any([bypass, anti_debug, dinvoke, syscalls, unhook, process])))
-        # if unhook:
-        #     self.load_module(module=UnhookModule(language=language, dinvoke=dinvoke),
-        #                      commit=(not any([bypass, anti_debug, dinvoke, syscalls, process])))
-        # if anti_debug:
-        #     self.load_module(module=AntiDebugModule(language=language, dinvoke=dinvoke),
-        #                      commit=(not any([bypass, dinvoke, syscalls, process])))
-        # if bypass:
-        #     self.load_module(
-        #         module=AmsiModule(
-        #             dinvoke=dinvoke,
-        #             language=language,
-        #         ),
-        #         commit=not any([dinvoke, syscalls, process])
-        #     )
-        # if dinvoke and language == Language.CSHARP:
-        #     self.load_module(module=DinvokeModule(),
-        #                      commit=any([syscalls, process]))
-        # if process:
-        #     self.load_module(module=FindProcessModule(process=process, language=language),
-        #                      commit=not syscalls)
-        # if load_parameters_module:
-        #     self.load_module(module=EvalArgsModule(language=language),
-        #                      commit=not syscalls)
-        # if syscalls and not dinvoke:
-                #     self.load_module(
-                # module=SyscallsModule(libraries=None, language=language),
-                # commit=True)
-
         # Dirty dirty workaround for DotNetToJScript
         if self.template.template_name.find("dtjs") > -1:
             self.load_module(TemplateModule.from_name("dtjs", kwargs=None), commit=True)
@@ -126,6 +96,36 @@ class CodeWriter:
     def source_files(self):
         self.collect_sources()
         return [self.outfile] + self.additional_sources
+
+    def set_assembly_info(self, version_info):
+        path = tempfile.NamedTemporaryFile(
+            dir=str(Config().get_path("DIRECTORIES", "WRITER")),
+            suffix=".cs",
+            delete=True
+        ).name
+        if self.language == Language.CSHARP:
+            description = version_info["FileDescription"] if "FileDescription" in version_info.keys() else ""
+            copyright = version_info["LegalCopyright"] if "LegalCopyright" in version_info.keys() else ""
+            company = version_info["CompanyName"] if "CompanyName" in version_info.keys() else ""
+            product = version_info["ProductName"] if "ProductName" in version_info.keys() else ""
+            file_version = version_info["FileVersion"] if "FileVersion" in version_info.keys() else ""
+            assembly_version = version_info["ProductVersion"] if "ProductVersion" in version_info.keys() else ""
+            title = version_info["OriginalFilename"] if "OriginalFilename" in version_info.keys() else ""
+
+            self.load_module(
+                AssemblyInfoModule(
+                    path=path,
+                    description=description,
+                    copyright=copyright,
+                    company=company,
+                    product=product,
+                    file_version=file_version,
+                    assembly_version=assembly_version,
+                    arch=self.arch,
+                    title=description,
+                    language=self.language
+                )
+            )
 
     def get_temporary_file_extension(self):
         if self.language == Language.CSHARP:

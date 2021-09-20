@@ -14,7 +14,8 @@ from engine.CodeWriter import CodeWriter
 from engine.Filter import Filter
 from enums.Language import Language
 from generators.Generator import Generator
-from utils import CarbonCopy
+from signers import CarbonCopy
+from utils.MetaTwin import MetaTwin
 from utils.console import Console
 from utils.utils import shellcode_signature, py_bin2sh, sgn
 
@@ -39,7 +40,8 @@ class NativeArtifactGenerator(Generator):
                  function: str = None,
                  params: str = None,
                  modules: list = None,
-                 hide_window: bool = False
+                 hide_window: bool = False,
+                 clone: str = None
                  ):
         super().__init__(file=file, chain=chain)
         self.arch = arch
@@ -48,6 +50,8 @@ class NativeArtifactGenerator(Generator):
         self.placeholder = config.get("PLACEHOLDERS", "SHELLCODE")
         artifacts_path = config.get_path("DIRECTORIES", "ARTIFACTS")
         self.outfile = outfile
+
+        self.clone = Path(clone) if clone else None
 
         # DLL Wrap generates a Write-Execute DLL
         self.dll_wrap = dll
@@ -269,10 +273,15 @@ class NativeArtifactGenerator(Generator):
             Console.auto_line(f"  [>] Phase {step}.{substep}: Compiling EXE...")
             self.compile_exe(shellcode)
             substep += 1
-            Console.auto_line(f"    [+] Success: file stored at {self.outfile}")
+            Console.auto_line(f"    [+] Success: file stored at {self.outfiles['exe-temp']}")
             Console.auto_line(f"    [+] Shellcode Signature: {shellcode_signature(shellcode)}")
+            if self.clone:
+                Console.auto_line(f"  [>] Phase {step}.{substep}: Cloning metadata from another binary")
+                self.clone_metadata(Path(self.outfiles['exe-temp']))
+                substep += 1
             if self.sign:
                 Console.auto_line(f"  [>] Phase {step}.{substep}: Signing native binary")
+                self.sign_exe()
             step += 1
             substep = 1
         if self.dll or self.dll_wrap:
@@ -281,8 +290,12 @@ class NativeArtifactGenerator(Generator):
             self.compile_dll(shellcode if not self.dll_wrap else None)
             Console.auto_line(f"    [+] Success: file stored at {self.outfiles['dll-temp']}")
             substep += 1
+            if self.clone:
+                Console.auto_line(f"  [>] Phase {step}.{substep}: Cloning metadata from another binary")
+                self.clone_metadata(Path(self.outfiles['dll-temp']))
+                substep += 1
             if self.sign:
-                Console.auto_line(f"  [>] Phase {step}.2: Signing native library")
+                Console.auto_line(f"  [>] Phase {step}.{substep}: Signing native library")
                 self.sign_dll()
             step += 1
         substep = 1

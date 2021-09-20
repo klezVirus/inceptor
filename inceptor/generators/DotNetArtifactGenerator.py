@@ -1,10 +1,10 @@
 import os
 import shutil
 import subprocess
-import sys
 import tempfile
 import traceback
 from datetime import datetime
+from pathlib import Path
 
 from compilers.CscCompiler import CscCompiler
 from compilers.ILPacker import ILPacker
@@ -14,16 +14,15 @@ from converters.TransfomerExceptions import ConversionError
 from converters.TransformerFactory import TransformerFactory
 from encoders.EncoderChain import EncoderChain
 from encoders.HexEncoder import HexEncoder
-from encoders.ZlibEncoder import ZlibEncoder
-from engine.CodeWriter import CodeWriter, TemplateFactory
+from engine.CodeWriter import CodeWriter
 from engine.Filter import Filter
-from engine.Template import Template
 from enums.Language import Language
 from generators.Generator import Generator
 from obfuscators.Obfuscator import Obfuscator
+from utils.MetaTwin import MetaTwin
 from utils.console import Console
 from utils.utils import get_project_root, file_signature, shellcode_signature, sgn
-from utils import CarbonCopy
+from signers import CarbonCopy
 
 
 class DotNetArtifactGenerator(Generator):
@@ -44,7 +43,8 @@ class DotNetArtifactGenerator(Generator):
                  function: str = None,
                  sign: bool = False,
                  modules: list = None,
-                 hide_window: bool = False
+                 hide_window: bool = False,
+                 clone: str = None
                  ):
         super().__init__(file=file, chain=chain)
         if chain.is_empty():
@@ -54,6 +54,8 @@ class DotNetArtifactGenerator(Generator):
         self.sgn = sgn
         self.obfuscate = obfuscate
         self.sign = sign
+
+        self.clone = Path(clone) if clone else None
 
         self.arch = None
         self.tool_arch = None
@@ -227,6 +229,14 @@ class DotNetArtifactGenerator(Generator):
         self.compiler.set_libraries(libs=self.writer.template.libraries)
         self.dependencies = ",".join([f'"{os.path.basename(lib)}"' for lib in self.writer.template.libraries])
 
+    def clone_metadata2(self, target: Path):
+        if not (self.clone and self.clone.is_file()):
+            return False
+        meta_twin = MetaTwin()
+        version_info = meta_twin.inspect(str(self.clone.absolute()), dump=True)
+        # Workaround for .NET assembly infromations
+        self.writer.set_assembly_info(version_info)
+
     def generate(self):
         try:
             self.generate_wrapped()
@@ -281,6 +291,12 @@ class DotNetArtifactGenerator(Generator):
             Console.auto_line(f"  [>] Phase {step}.{substep}: Compiling and linking dependency files in {dep}")
         step += 1
         substep = 1
+
+        if self.clone:
+            Console.auto_line(f"[*] Phase {step}: Cloning AssemblyInfo from another binary")
+            self.clone_metadata2(Path(self.outfiles['temp']))
+            step += 1
+
         Console.auto_line(f"[*] Phase {step}: Compiling")
         self.compile_exe()
         step += 1
@@ -293,6 +309,11 @@ class DotNetArtifactGenerator(Generator):
         if self.obfuscate:
             Console.auto_line(f"[*] Phase {step}: Obfuscate dotnet binary")
             self.obfuscate_exe()
+            step += 1
+
+        if self.clone:
+            Console.auto_line(f"[*] Phase {step}: Cloning resources from another binary")
+            self.clone_metadata(Path(self.outfiles['temp']))
             step += 1
 
         if self.sign:

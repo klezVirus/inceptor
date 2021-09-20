@@ -93,6 +93,8 @@ inceptor: A Windows-based PE Packing framework designed to help
     native_parser.add_argument(
         '--dll', required=False, default=False, action='store_true', help='If set, generates a wrapper DLL')
     native_parser.add_argument(
+        '--clone', required=False, type=str, default=None, help='Clone metadata from another binary')
+    native_parser.add_argument(
         '--delay', required=False, default=None, type=int, help='Add a delay of n seconds before execution')
     native_parser.add_argument(
         '-hw', '--hide-window', required=False, action='store_true',
@@ -139,6 +141,8 @@ inceptor: A Windows-based PE Packing framework designed to help
         '--sign', required=False, default=False, action='store_true', help='Sign the binary with CarbonCopy')
     dotnet_parser.add_argument(
         '-o', '--outfile', required=True, type=str, default=None, help='Name of the generated .NET executable')
+    dotnet_parser.add_argument(
+        '--clone', required=False, type=str, default=None, help='Clone metadata from another binary')
     dotnet_parser.add_argument(
         '--delay', required=False, default=None, type=int,
         help='Add a delay of n seconds before execution (requires Delay module)')
@@ -229,7 +233,7 @@ inceptor: A Windows-based PE Packing framework designed to help
     modules = [m.strip() for m in set(args.modules)]
 
     # Let's record the last command for other uses
-    with open(HISTORY, "w") as history:
+    with open(HISTORY, "a") as history:
         history.write(" ".join(sys.argv))
 
     if filetype == "dll" and isDotNet(binary_abs_path) and not (args.function and args.classname):
@@ -259,7 +263,8 @@ inceptor: A Windows-based PE Packing framework designed to help
                                             obfuscate=args.obfuscate,
                                             hide_window=args.hide_window,
                                             classname=args.classname,
-                                            function=args.function
+                                            function=args.function,
+                                            clone=args.clone
                                             )
 
     elif action == "dotnet":
@@ -279,8 +284,9 @@ inceptor: A Windows-based PE Packing framework designed to help
                                             arch=args.arch,
                                             sign=args.sign,
                                             hide_window=args.hide_window,
-                                            classname = args.classname,
-                                            function = args.function
+                                            classname=args.classname,
+                                            function=args.function,
+                                            clone=args.clone
                                             )
 
     elif action == "powershell":
@@ -299,8 +305,8 @@ inceptor: A Windows-based PE Packing framework designed to help
                                                 process=args.process,
                                                 arch=args.arch,
                                                 obfuscate=args.obfuscate,
-                                                classname = args.classname,
-                                                function = args.function
+                                                classname=args.classname,
+                                                function=args.function
                                             )
     else:
         raise NotImplementedError(f"[-] Invalid action supplied")
@@ -310,3 +316,4 @@ inceptor: A Windows-based PE Packing framework designed to help
     if check:
         threat_check = ThreatCheck()
         threat_check.check(args.outfile)
+
