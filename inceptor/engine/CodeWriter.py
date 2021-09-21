@@ -8,7 +8,8 @@ from engine.Filter import Filter
 from engine.Template import Template
 from engine.TemplateFactory import TemplateFactory
 from engine.modules.AssemblyInfoModule import AssemblyInfoModule
-from engine.modules.TemplateModule import TemplateModule, ModuleNotCompatibleException, ModuleNotLoadableException
+from engine.modules.TemplateModule import TemplateModule, ModuleNotCompatibleException, ModuleNotLoadableException, \
+    ModuleNotFoundException
 from enums.Architectures import Arch
 from enums.Language import Language
 from utils.console import Console
@@ -25,6 +26,7 @@ class CodeWriter:
                  _filter: Filter = None,
                  modules: list = None,
                  arch: str = "x64"):
+        self.debug = Config().get_boolean("DEBUG", "writer")
         self.additional_sources = []
         self.language = language
         self.bypass_dll = tempfile.NamedTemporaryFile(
@@ -57,9 +59,14 @@ class CodeWriter:
                     )
                 )
             except ModuleNotCompatibleException as e:
-                Console.auto_line(f"[-] Module {m} could not be loaded")
+                if self.debug:
+                    Console.fail_line(f"[ERROR] Module {m} could not be loaded")
             except ModuleNotLoadableException as e:
-                Console.auto_line(f"[-] Module {m} is not loadable")
+                if self.debug:
+                    Console.fail_line(f"[ERROR] Module {m} is not loadable")
+            except ModuleNotFoundException as e:
+                if self.debug:
+                    Console.fail_line(f"[ERROR] Module {m} was not found")
 
         for m in modules_objects:
             if m and m.filter_string and m.filter_string != "":
@@ -146,6 +153,8 @@ class CodeWriter:
 
     def load_module(self, module: TemplateModule, commit=False):
         if module:
+            if self.debug:
+                Console.auto_line(f"[DEBUG] Loading module {module.name}")
             self.template.add_module(module)
         if commit:
             self.template.process_modules()
