@@ -9,14 +9,27 @@ import sys
 
 from config.Config import Config
 from utils.console import Console
+from win32_setctime import setctime
 
 
 class MetaTwin:
     def __init__(self):
         self.path = str(Config().get_path("DIRECTORIES", f"libs").joinpath("ResourceHacker.exe"))
         self.debug = Config().get_boolean("DEBUG", "utilities")
+        self.copy_from = None
+        self.copy_to = None
+
+    def timestomp(self, copy_from, copy_to):
+        st_mtime = os.stat(copy_from).st_mtime
+        st_atime = os.stat(copy_from).st_atime
+        st_ctime = os.stat(copy_from).st_ctime
+        os.utime(copy_to, (st_atime, st_mtime))
+        setctime(copy_to, st_ctime)
 
     def clone(self, copy_from, copy_to):
+        self.copy_from = copy_from
+        self.copy_to = copy_to
+
         base_name = os.path.basename(tempfile.NamedTemporaryFile(prefix="resources").name)
         log_file = Config().get_path("DIRECTORIES", f"writer").joinpath(f"{base_name}.log")
         resource_file = Config().get_path("DIRECTORIES", f"writer").joinpath(f"{base_name}.res")
