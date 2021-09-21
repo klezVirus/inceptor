@@ -11,23 +11,19 @@ from config.Config import Config
 from OpenSSL import crypto
 from sys import argv, platform
 from pathlib import Path
+
+from enums.Architectures import Arch
+from signers.Signer import Signer
 from utils.utils import get_project_root
 import shutil
 import ssl
 import os
 import subprocess
 
-TIMESTAMP_URL = "http://sha256timestamp.ws.symantec.com/sha256/timestamp"
 
-
-class CarbonCopy:
-    def __init__(self, host='www.microsoft.com', port='443', arch="x64", banner=False, verbose=False):
-        self.host = host
-        self.port = port
-        self.arch = arch
-        self.banner = banner
-        self.verbose = verbose
-        self.certificate_directory = Path(os.path.join(get_project_root(), "certs"))
+class CarbonCopy(Signer):
+    def __init__(self, host='www.microsoft.com', port='443', arch=Arch.x64, verbose=False):
+        super().__init__(host=host, port=port, arch=arch, verbose=verbose)
 
     def sign(self, signee, signed):
         if self.banner:
@@ -99,7 +95,7 @@ class CarbonCopy:
             PFXFILE.write_bytes(pfxdata)
 
             if platform == "win32":
-                signtool = Config().get_path("SIGNERS", f"SIGNTOOL_{self.arch}")
+                signtool = Config().get_path("SIGNERS", f"SIGNTOOL_{self.arch.value}")
                 if self.verbose:
                     print("[+] Platform is Windows OS...")
                     print(f"[+] Signing {signee} with signtool.exe...")
@@ -111,8 +107,8 @@ class CarbonCopy:
                     "sign",
                     "/v",
                     "/f", f"\"{PFXFILE}\"",
-                    "/d", "\"MozDef Corp\"",
-                    "/tr", TIMESTAMP_URL,
+                    "/d", "\"Microsoft Corporation\"",
+                    "/tr", Signer.TIMESTAMP_URL_TR,
                     "/td", "SHA256",
                     "/fd", "SHA256",
                     f"\"{signed}\""
@@ -131,7 +127,7 @@ class CarbonCopy:
                     print("[+] Platform is Linux OS...")
                     print(f"[+] Signing {signee} with {PFXFILE} using osslsigncode...")
                 args = ("osslsigncode", "sign", "-pkcs12", f"\"{PFXFILE}\"",
-                        "-n", "Notepad Benchmark Util", "-i", TIMESTAMP_URL,
+                        "-n", "Notepad Benchmark Util", "-i", Signer.TIMESTAMP_URL_TR,
                         "-in", f"\"{signee}\"", "-out", f"\"{signed}\"")
 
                 if self.verbose:
