@@ -62,6 +62,14 @@ class Console:
         Console.write_line(what=what, color=Fore.YELLOW)
 
     @staticmethod
+    def debug(what):
+        Console.write(what=what, color=Fore.LIGHTYELLOW_EX)
+
+    @staticmethod
+    def debug_line(what):
+        Console.write_line(what=what, color=Fore.LIGHTYELLOW_EX)
+
+    @staticmethod
     def auto(what):
         if what.find("[+]") > -1:
             Console.success(what=what)
@@ -69,8 +77,10 @@ class Console:
             Console.info(what=what)
         elif what.find("[>]") > -1:
             Console.progress(what=what)
-        elif what.find("[#]") > -1:
+        elif what.find("[#]") > -1 or what.find("[WARNING]") > -1 or what.find("[WARN]") > -1:
             Console.warn(what=what)
+        elif what.find("[D]") > -1 or what.find("[DEBUG]") > -1:
+            Console.debug(what=what)
         elif what.find("[-]") > -1:
             Console.fail(what=what)
         elif what == "Success" or what == "Done":
@@ -88,8 +98,10 @@ class Console:
             Console.info_line(what=what)
         elif what.find("[>]") > -1:
             Console.progress_line(what=what)
-        elif what.find("[#]") > -1:
+        elif what.find("[#]") > -1 or what.find("[WARNING]") > -1 or what.find("[WARN]") > -1:
             Console.warn_line(what=what)
+        elif what.find("[D]") > -1 or what.find("[DEBUG]") > -1:
+            Console.debug_line(what=what)
         elif what.find("[-]") > -1:
             Console.fail_line(what=what)
         elif what == "Success" or what == "Done":
