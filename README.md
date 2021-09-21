@@ -208,106 +208,8 @@ optional arguments:
   -hh                   Show functional table
   -Z, --check           Check file against ThreatCheck
 ```
+
 <!-- usagestop -->
-
-<!-- dotnet -->
-### .NET Artifacts
-```sh-session
-$ python inceptor.py dotnet <shellcode-file|binary-file> [OPTIONS]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -t {loader,donut,pe2sh,srdi}, --transformer {loader,donut,pe2sh,srdi}
-                        Shellcode Transformer
-  -m MODULES, --modules MODULES
-                        Modules to use (dinvoke, syscalls, amsi...)
-  -O, --obfuscate       Obfuscate the C# loader
-  -P, --pinject         Use a process injection template
-  -P0 PROCESS, --process PROCESS
-                        Inject into a specific process (Image Name)
-  -e ENCODER, --encoder ENCODER
-                        Encoder(s) to be used
-  -a COMPILER_ARGS, --compiler-args COMPILER_ARGS
-                        Compiler arguments
-  -C {csc}, --compiler {csc}
-                        Compiler to use
-  -p PARAMS, --params PARAMS
-                        Params to pass to the wrapped .NET executable
-  --arch {x86,x64,anycpu,anycpu-x86,anycpu-x64}
-                        Target Architecture
-  --sgn                 Uses Shikata-Ga-Nai as assembly encoder
-  --sign                Sign the binary with CarbonCopy
-  -o OUTFILE, --outfile OUTFILE
-                        Name of the generated .NET executable
-  --delay DELAY         Add a delay of n seconds before execution (requires Delay module)
-```
-<!-- dotnetstop -->
-
-<!-- native -->
-### Native Artifacts
-```sh-session
-$ python inceptor.py native <shellcode-file|binary-file> [OPTIONS]
-
-positional arguments:
-  binary                Binary file to convert (EXE or RAW for Vanilla Injection)
-
-positional arguments:
-  binary                Binary file to convert (EXE or RAW for Vanilla Injection)
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -t {loader,pe2sh,donut,srdi}, --transformer {loader,pe2sh,donut,srdi}
-                        Compiler arguments
-  -C {cl,clang,llvm}, --compiler {cl,clang,llvm}
-                        Compiler to use
-  -a COMPILER_ARGS, --compiler-args COMPILER_ARGS
-                        Compiler arguments
-  --exports EXPORTS     Definition file with DLL exported function
-  -e ENCODER, --encoder ENCODER
-                        Encoder(s) to be used
-  -o OUTFILE, --outfile OUTFILE
-                        Name of the generated Native executable
-  -m MODULES, --modules MODULES
-                        Modules to use (dinvoke, syscalls, unhook...)
-  -P, --pinject         Use a process injection template
-  -P0 PROCESS, --process PROCESS
-                        Inject into a specific process (Image Name)
-  --arch {x86,x64}      Architecture
-  --sgn                 Uses Shikata-Ga-Nai as assembly encoder
-  --sign                Sign the loader with CarbonCopy
-  -O, --obfuscate       Obfuscate the native loader (same as -C llvm)
-  --dll                 If set, generates a wrapper DLL
-  --delay DELAY         Add a delay of n seconds before execution
-```
-<!-- nativestop -->
-
-<!-- powershell -->
-### PowerShell Artifacts
-```sh-session
-$ python inceptor.py powershell <shellcode-file|binary-file> [OPTIONS]
-
-positional arguments:
-  binary                Binary file to convert (.NET exe to perform Reflective Loading or RAW for Vanilla Injection)
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -m MODULES, --modules MODULES
-                        Modules to use (amsi, delay...)
-  -o OUTFILE, --outfile OUTFILE
-                        Name of the generated .NET executable
-  -t {loader,donut,pe2sh,srdi}, --transformer {loader,donut,pe2sh,srdi}
-                        Shellcode Transformer
-  -e ENCODER, --encoder ENCODER
-                        Encoder(s) to be used
-  --delay DELAY         Add a delay of n seconds before execution
-  -O, --obfuscate       Obfuscate the PowerShell Wrapper
-  --arch {x86,x64}      Architecture
-  --sgn                 Uses Shikata-Ga-Nai as assembly encoder
-  -P, --pinject         Use a process injection template
-  -P0 PROCESS, --process PROCESS
-                        Inject into a specific process (Image Name)
-```
-<!-- powershellstop -->
 
 ## Next Developments
 
@@ -333,4 +235,4 @@ optional arguments:
 [10]: https://github.com/paranoidninja/CarbonCopy
 [11]: https://twitter.com/phraaaaaaa
 [12]: https://twitter.com/_ForrestOrr
-[13]: https://github.com/klezVirus/inceptor.git
+[13]: https://github.com/klezVirus/inceptor/wiki
