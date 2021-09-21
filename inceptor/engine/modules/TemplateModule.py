@@ -18,6 +18,10 @@ class ModuleNotLoadableException(Exception):
     pass
 
 
+class ModuleNotFoundException(Exception):
+    pass
+
+
 class TemplateModule:
     def __init__(self, name: str = None, arch=Arch.x64, libraries: list = None, components: list = None):
         self.components = components if components else []
@@ -78,7 +82,7 @@ class TemplateModule:
             # print(_class_string)
             _class = locate(_class_string)
             _instance = _class(kwargs=kwargs['kwargs'])
-            if not _instance.loadable:
+            if not _instance.loadable or not hasattr(_instance, "loadable"):
                 raise ModuleNotLoadableException()
             return _instance
         except ModuleNotCompatibleException:
@@ -86,6 +90,10 @@ class TemplateModule:
         except TypeError as e:
             if str(e).find("unexpected keyword argument 'kwargs'") > -1:
                 raise ModuleNotLoadableException()
+            elif str(e).find("'NoneType' object is not callable") > -1:
+                raise ModuleNotFoundException()
+            else:
+                traceback.print_exc()
         except Exception as e:
-            # traceback.print_exc()
+            traceback.print_exc()
             pass
