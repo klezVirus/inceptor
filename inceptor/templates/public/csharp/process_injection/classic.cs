@@ -250,6 +250,18 @@ namespace Ryu
             public IntPtr UniquePid;
             public IntPtr MoreReserved;
         }
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr OpenProcess(
+            ProcessAccessFlags processAccess,
+            bool bInheritHandle,
+            int processId
+        );
+
+        [DllImport("Kernel32.dll", CallingConvention = CallingConvention.StdCall)]
+        public static extern void CloseHandle(
+            IntPtr handle
+        );
     }
 
 
