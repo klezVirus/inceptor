@@ -22,8 +22,9 @@ class ThreatCheck:
         for engine in self.engines:
             try:
                 cmd = f"\"{self.path}\" -f {filename} -e {engine}"
-                # print(cmd)
-                output = subprocess.check_output(cmd).decode().rstrip()
+                if Config().get_boolean("DEBUG", "utilities"):
+                    print(cmd)
+                output = subprocess.check_output(cmd, stderr=subprocess.STDOUT).decode().rstrip()
                 if output.find("No threat found") >= 0:
                     Console.auto_line(f"  [+] SUCCESS: {engine} Bypassed!")
                 elif output.find("Ensure real-time protection is enabled") >= 0:
