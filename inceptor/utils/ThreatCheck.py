@@ -13,6 +13,7 @@ class ThreatCheck:
     def __init__(self):
         self.engines = ["Defender", "AMSI"]
         self.path = str(Config().get_path("DIRECTORIES", "libs").joinpath("ThreatCheck.exe"))
+        self.debug = Config().get_boolean("DEBUG", "utilities")
 
     def check(self, filename):
         Console.auto_line(f"[+] Starting ThreatCheck Scan At {datetime.utcnow()}")
@@ -22,8 +23,8 @@ class ThreatCheck:
         for engine in self.engines:
             try:
                 cmd = f"\"{self.path}\" -f {filename} -e {engine}"
-                if Config().get_boolean("DEBUG", "utilities"):
-                    print(cmd)
+                if self.debug:
+                    Console.auto_line(f"  [>] ThreatCheck cmdline: {cmd}")
                 output = subprocess.check_output(cmd, stderr=subprocess.STDOUT).decode().rstrip()
                 if output.find("No threat found") >= 0:
                     Console.auto_line(f"  [+] SUCCESS: {engine} Bypassed!")
@@ -34,6 +35,6 @@ class ThreatCheck:
             except subprocess.CalledProcessError as e:
                 for line in e.output.decode().split("\n"):
                     if re.search(r"error", line):
-                        print(f"  [-] Error: {line}")
+                        Console.auto_line(f"  [-] Error: {line}")
                         continue
         Console.auto_line(f"[+] ThreatCheck Scan Finished At {datetime.utcnow()}")
