@@ -86,7 +86,17 @@ inceptor: A Windows-based PE Packing framework designed to help
     native_parser.add_argument(
         '--sgn', required=False, default=False, action='store_true', help='Uses Shikata-Ga-Nai as assembly encoder')
     native_parser.add_argument(
-        '--sign', required=False, default=False, action='store_true', help='Sign the loader with CarbonCopy')
+        '-s', '--sign', required=False, default=False, action='store_true',
+        help='Sign the binary (default: CarbonCopy)')
+    native_parser.add_argument(
+        '-so', '--sign-offline', required=False, default=False, action='store_true',
+        help='Sign the binary with LazySign logic')
+    native_parser.add_argument(
+        '-ss', '--sign-steal', required=False, default=None, type=str,
+        help='Sign the binary stealing the signature from another')
+    native_parser.add_argument(
+        '-sd', '--sign-domain', required=False, default=None, type=str,
+        help='Sign the binary dumping the certificate from a domain')
     native_parser.add_argument(
         '-O', '--obfuscate', required=False, action='store_true', default=False,
         help='Obfuscate the native loader (same as -C llvm)')
@@ -138,7 +148,16 @@ inceptor: A Windows-based PE Packing framework designed to help
     dotnet_parser.add_argument(
         '--sgn', required=False, default=False, action='store_true', help='Uses Shikata-Ga-Nai as assembly encoder')
     dotnet_parser.add_argument(
-        '--sign', required=False, default=False, action='store_true', help='Sign the binary with CarbonCopy')
+        '-s', '--sign', required=False, default=False, action='store_true', help='Sign the binary (default: CarbonCopy)')
+    dotnet_parser.add_argument(
+        '-so', '--sign-offline', required=False, default=False, action='store_true',
+        help='Sign the binary with LazySign logic')
+    dotnet_parser.add_argument(
+        '-ss', '--sign-steal', required=False, default=None, type=str,
+        help='Sign the binary stealing the signature from another')
+    dotnet_parser.add_argument(
+        '-sd', '--sign-domain', required=False, default=None, type=str,
+        help='Sign the binary dumping the certificate from a domain')
     dotnet_parser.add_argument(
         '-o', '--outfile', required=True, type=str, default=None, help='Name of the generated .NET executable')
     dotnet_parser.add_argument(
@@ -264,7 +283,10 @@ inceptor: A Windows-based PE Packing framework designed to help
                                             hide_window=args.hide_window,
                                             classname=args.classname,
                                             function=args.function,
-                                            clone=args.clone
+                                            clone=args.clone,
+                                            domain=args.sign_domain,
+                                            offline=args.sign_offline,
+                                            steal_from=args.sign_steal
                                             )
 
     elif action == "dotnet":
@@ -286,7 +308,10 @@ inceptor: A Windows-based PE Packing framework designed to help
                                             hide_window=args.hide_window,
                                             classname=args.classname,
                                             function=args.function,
-                                            clone=args.clone
+                                            clone=args.clone,
+                                            domain=args.sign_domain,
+                                            offline=args.sign_offline,
+                                            steal_from=args.sign_steal
                                             )
 
     elif action == "powershell":

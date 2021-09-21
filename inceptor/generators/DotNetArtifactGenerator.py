@@ -44,7 +44,10 @@ class DotNetArtifactGenerator(Generator):
                  sign: bool = False,
                  modules: list = None,
                  hide_window: bool = False,
-                 clone: str = None
+                 clone: str = None,
+                 domain: str = None,
+                 offline: bool = False,
+                 steal_from: str = None
                  ):
         super().__init__(file=file, chain=chain)
         if chain.is_empty():
@@ -53,7 +56,12 @@ class DotNetArtifactGenerator(Generator):
         self.hide_window = hide_window
         self.sgn = sgn
         self.obfuscate = obfuscate
+
+        # Code Signing
         self.sign = sign
+        self.domain = domain
+        self.steal_from = steal_from
+        self.offline = offline if not steal_from else True
 
         self.clone = Path(clone) if clone else None
 
@@ -152,9 +160,13 @@ class DotNetArtifactGenerator(Generator):
             raise FileNotFoundError("Error generating EXE")
 
     def sign_exe(self):
-        host = Config().get("SIGNING", "domain")
-        signer = CarbonCopy.CarbonCopy(verbose=False, host=host)
-        signer.sign(signee=self.outfiles["temp"], signed=self.outfiles["signed"])
+        super().sign(
+            signee=self.outfiles["temp"],
+            signed=self.outfiles["signed"],
+            clone=self.steal_from,
+            offline=self.offline,
+            domain=self.domain
+        )
         shutil.copy(self.outfiles["signed"], self.outfiles['temp'])
 
     def obfuscate_exe(self):

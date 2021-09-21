@@ -41,7 +41,10 @@ class NativeArtifactGenerator(Generator):
                  params: str = None,
                  modules: list = None,
                  hide_window: bool = False,
-                 clone: str = None
+                 clone: str = None,
+                 domain: str = None,
+                 offline: bool = False,
+                 steal_from: str = None
                  ):
         super().__init__(file=file, chain=chain)
         self.arch = arch
@@ -51,6 +54,7 @@ class NativeArtifactGenerator(Generator):
         artifacts_path = config.get_path("DIRECTORIES", "ARTIFACTS")
         self.outfile = outfile
 
+        # Metadata
         self.clone = Path(clone) if clone else None
 
         # DLL Wrap generates a Write-Execute DLL
@@ -59,8 +63,14 @@ class NativeArtifactGenerator(Generator):
         self.dll = False
         if self.outfile.endswith("dll"):
             self.dll = True
+        # LI Encoding
         self.sgn = sgn
+        # Code Signing
         self.sign = sign
+        self.domain = domain
+        self.steal_from = steal_from
+        self.offline = offline if not steal_from else True
+
         self.exports = exports
         self.obj_files = []
 
@@ -92,8 +102,8 @@ class NativeArtifactGenerator(Generator):
             "dll": os.path.join(artifacts_path, "sagat.dll"),
             "exe-signed": os.path.join(artifacts_path, f"{basename}-signed.exe"),
             "dll-signed": os.path.join(artifacts_path, f"{basename}-signed.dll"),
-            "exe-final": outfile,
-            "dll-final": f"{basename}.dll",
+            "exe-final": str(Path(outfile).absolute()),
+            "dll-final": str(Path(f"{os.path.splitext(outfile)[0]}.dll").absolute()),
         }
         if obfuscate:
             compiler = "llvm"
@@ -147,16 +157,24 @@ class NativeArtifactGenerator(Generator):
             raise FileNotFoundError("Error generating DLL")
 
     def sign_exe(self):
-        host = Config().get("SIGNING", "domain")
-        signer = CarbonCopy.CarbonCopy(verbose=False, host=host)
-        signer.sign(signee=self.outfiles["exe-temp"], signed=self.outfiles["exe-signed"])
+        super().sign(
+            signee=self.outfiles["exe-temp"],
+            signed=self.outfiles["exe-signed"],
+            clone=self.steal_from,
+            offline=self.offline,
+            domain=self.domain
+        )
         shutil.copy(self.outfiles["exe-signed"], self.outfiles['exe-temp'])
         self.dll_payload = py_bin2sh(self.outfiles["exe-temp"])
 
     def sign_dll(self):
-        host = Config().get("SIGNING", "domain")
-        signer = CarbonCopy.CarbonCopy(verbose=False, host=host)
-        signer.sign(signee=self.outfiles["dll-temp"], signed=self.outfiles["dll-signed"])
+        super().sign(
+            signee=self.outfiles["dll-temp"],
+            signed=self.outfiles["dll-signed"],
+            clone=self.steal_from,
+            offline=self.offline,
+            domain=self.domain
+        )
         shutil.copy(self.outfiles["dll-signed"], self.outfiles['dll-temp'])
 
     def finalise_exe(self):
@@ -168,7 +186,7 @@ class NativeArtifactGenerator(Generator):
 
     def finalise_dll(self):
         file = self.outfiles["dll-final"]
-        shutil.copy(self.outfiles['dll-temp'], file)
+        shutil.copy2(self.outfiles['dll-temp'], file)
         if os.path.isfile(file):
             Console.auto_line(f"    [+] Success: file stored at {file}")
         return file
@@ -294,6 +312,10 @@ class NativeArtifactGenerator(Generator):
                 Console.auto_line(f"  [>] Phase {step}.{substep}: Cloning metadata from another binary")
                 self.clone_metadata(Path(self.outfiles['dll-temp']))
                 substep += 1
+                Console.auto_line(f"  [>] Phase {step}.{substep}: Cloning EAT via Koppeling")
+                self.clone_exports(Path(self.outfiles['dll-temp']))
+                substep += 1
+
             if self.sign:
                 Console.auto_line(f"  [>] Phase {step}.{substep}: Signing native library")
                 self.sign_dll()
