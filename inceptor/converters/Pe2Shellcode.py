@@ -23,9 +23,10 @@ class Pe2sh(Transformer):
             print(f"[-] File not found: {target}")
             sys.exit(1)
         target_file_name, target_file_ext = os.path.splitext(target)
-        outfile = str(self.output_path.joinpath(os.path.basename(target_file_name)))
+        outfile = str(self.output_path.joinpath(os.path.basename(target_file_name)).absolute())
+        outfile = f"{outfile}.shc{target_file_ext}"
         try:
-            cmd = f'"{self.pe2sh}" "{target}" "{outfile}.shc{target_file_ext}"'
+            cmd = f'"{self.pe2sh}" "{target}" "{outfile}"'
             if self.debug:
                 Console.auto_line(f"  [>] Pe2Sh cmd line: {cmd}")
             output = subprocess.check_output(cmd)
@@ -39,8 +40,7 @@ class Pe2sh(Transformer):
             Console.warn_line(f"  [WARNING] {target.split(chr(92))[-1]} may not work in .NET")
         if not re.search(rb"\[\+\]\sSaved\sas\:", output):
             raise ConversionError(f"Failed to convert {target}")
-        converted = f"{target_file_name}.shc{target_file_ext}"
-        if not os.path.isfile(converted):
-            Console.auto_line(f"[-] Failed to locate converted file: {converted}")
+        if not os.path.isfile(outfile):
+            Console.auto_line(f"[-] Failed to locate converted file: {outfile}")
             sys.exit(1)
-        return bin2hex4pe2sh(converted)
+        return bin2hex4pe2sh(outfile)
