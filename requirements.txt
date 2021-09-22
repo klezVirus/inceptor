@@ -8,4 +8,4 @@ pefile
 pycryptodome
 pyOpenSSL
 py7zr
-win32-sectime
+win32-setctime
