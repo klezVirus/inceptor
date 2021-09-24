@@ -96,12 +96,12 @@ class NativeArtifactGenerator(Generator):
 
         basename = os.path.basename(os.path.splitext(outfile)[0])
         self.outfiles = {
-            "exe-temp": os.path.join(working_directory, f"{basename}-temp.exe"),
-            "dll-temp": os.path.join(working_directory, f"{basename}-temp.dll"),
+            "exe-temp": str(Path(working_directory).joinpath(f"{basename}-temp.exe").absolute()),
+            "dll-temp": str(Path(working_directory).joinpath(f"{basename}-temp.dll").absolute()),
             "exe": os.path.join(artifacts_path, "bison.exe"),
             "dll": os.path.join(artifacts_path, "sagat.dll"),
-            "exe-signed": os.path.join(artifacts_path, f"{basename}-signed.exe"),
-            "dll-signed": os.path.join(artifacts_path, f"{basename}-signed.dll"),
+            "exe-signed": str(Path(artifacts_path).joinpath(f"{basename}-signed.exe").absolute()),
+            "dll-signed": str(Path(artifacts_path).joinpath(f"{basename}-signed.dll").absolute()),
             "exe-final": str(Path(outfile).absolute()),
             "dll-final": str(Path(f"{os.path.splitext(outfile)[0]}.dll").absolute()),
         }
@@ -134,7 +134,7 @@ class NativeArtifactGenerator(Generator):
                 _filter=_dll_filter,
                 modules=modules
             )
-        elif self.dll_wrap:
+        if self.dll_wrap:
             self.dll_writer = CodeWriter(
                 language=Language.CPP,
                 template=config.get_path("DIRECTORIES", "DLL"),
