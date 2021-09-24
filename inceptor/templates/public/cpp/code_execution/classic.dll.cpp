@@ -17,7 +17,7 @@
 
 //####CODE####
 
-extern "C" __declspec(dllexport) void CALLBACK PsychoBlastEP(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow);
+extern "C" __declspec(dllexport) void CALLBACK PrintPdf(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow);
 
 DWORD WINAPI PsychoBlast(LPVOID lpParameter)
 {
@@ -82,7 +82,7 @@ DWORD WINAPI PsychoBlast(LPVOID lpParameter)
     return 0;
 }
 
-void CALLBACK PsychoBlastEP(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow)
+void CALLBACK PrintPdf(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow)
 {
     //####DELAY####
     //####ANTIDEBUG####

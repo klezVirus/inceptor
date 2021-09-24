@@ -15,6 +15,17 @@ VS_BT = f"https://visualstudio.microsoft.com/downloads/?utm_medium=microsoft&utm
 NET_FW = "https://dotnet.microsoft.com/download/dotnet-framework"
 
 LLVM_LINK = "https://github.com/klezVirus/obfuscator/releases/download/v1.0.0/llvm-clang-v1.0.0.7z"
+MinGW_LINK = "https://sourceforge.net/projects/mingw-w64/"
+
+
+class MissingCriticalDependency(Exception):
+    def __init__(self, msg):
+        super().__init__(msg)
+
+
+class MissingNonCriticalDependency(Exception):
+    def __init__(self, msg):
+        super().__init__(msg)
 
 
 def report(count, block_size, total_size):
@@ -51,9 +62,37 @@ def choose_logo():
     c.save_config()
 
 
+def detect_base_path():
+    known_paths = [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\",
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\",
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\2021\\",
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\",
+        "C:\\Program Files\\Microsoft Visual Studio\\2017\\",
+        "C:\\Program Files\\Microsoft Visual Studio\\2019\\",
+        "C:\\Program Files\\Microsoft Visual Studio\\2021\\",
+        "C:\\Program Files\\Microsoft Visual Studio\\2022\\"
+    ]
+    available = [path for path in known_paths if os.path.isdir(path)]
+    print(f"[*] Identified multiple VS Installations")
+    print(f"[*] Choose the Visual Studio Version:")
+    for n, ver in enumerate(available):
+        print(f"  {n}: {ver}")
+    choice = -1
+    while not (0 <= choice < len(available)):
+        try:
+            choice = int(input("> "))
+        except ValueError:
+            continue
+        except KeyboardInterrupt:
+            sys.exit(1)
+    return available[choice]
+
+
 def update_config():
     c = Config()
-    base_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\"
+    base_path = detect_base_path()
+    print(base_path)
 
     print("[*] Checking requirements")
 
@@ -69,7 +108,7 @@ def update_config():
     else:
         print("[+] .NET Framework is installed")
     try:
-        update_compilers()
+        update_compilers(base_path=base_path, config=c, commit=True)
     except KeyboardInterrupt:
         sys.exit(1)
     except:
@@ -87,7 +126,7 @@ def update_config():
     except:
         pass
     try:
-        update_dumper()
+        update_dumper(base_path=base_path)
     except KeyboardInterrupt:
         sys.exit(1)
     except:
@@ -98,12 +137,11 @@ def update_config():
         sys.exit(1)
     except:
         pass
+    print("[+] Finished!")
 
 
-def update_compilers():
-    c = Config()
-    base_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\"
-
+def update_compilers(base_path, config: Config, commit=False):
+    c = config
     print("[*] Checking Windows Build Tools")
     versions = {
         "CLx86_COMPILER": [],
@@ -180,22 +218,30 @@ def update_compilers():
             versions["VCVARSALL"].append(str(path))
 
     update_section(c, "COMPILERS", versions)
+    c.save_config()
 
-    if not (found[2] or found[3]) and any(found):
-        print("[-] Windows Clang compiler not installed. Opening Microsoft Download site...")
-        time.sleep(2)
-        os.startfile(VS_BT)
+    try:
+        if not (found[2] or found[3]) and any(found):
+            print("[-] Windows Clang compiler not installed. Opening Microsoft Download site...")
+            time.sleep(2)
+            os.startfile(VS_BT)
+            raise MissingNonCriticalDependency
+        elif not all(found):
+            print("[-] Windows BuildTools not installed. Opening Microsoft Download site...")
+            os.startfile(VS_BT)
+            raise MissingCriticalDependency
+        else:
+            print("[+] Windows BuildTools installed")
+            c.save_config()
+    except MissingCriticalDependency:
+        print("[-] Some critical dependencies where found to be missing. Aborting.")
         sys.exit(1)
-    elif not all(found):
-        print("[-] Windows BuildTools not installed. Opening Microsoft Download site...")
-        os.startfile(VS_BT)
-        sys.exit(1)
-    else:
-        print("[+] Windows BuildTools installed")
+    except MissingNonCriticalDependency:
         c.save_config()
 
-    # print("[-] Windows SDK not installed")
-    # os.startfile(WIN_SDK)
+
+# print("[-] Windows SDK not installed")
+# os.startfile(WIN_SDK)
 
 
 def update_llvm_compiler(max_recurse=1):
@@ -274,6 +320,7 @@ def update_section(config: Config, section: str, versions: dict):
             if len(v) == 0:
                 continue
             if len(v) == 1:
+                print(f"[+] Setting {section}.{k} to {v[0]}")
                 config.set(section, k, v[0])
                 continue
             print(f"[*] Choose a version for {k}:")
@@ -290,9 +337,8 @@ def update_section(config: Config, section: str, versions: dict):
                     continue
 
 
-def update_dumper():
+def update_dumper(base_path):
     c = Config()
-    base_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\"
 
     print("[*] Checking Dumpbin")
     found = [False, False]
