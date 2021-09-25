@@ -33,7 +33,7 @@ class AmsiModule(TemplateModule):
             path = str(Config().get_path("DIRECTORIES", "bypass"))
             allfiles = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
             chosen = TemplateFactory.choose_template(allfiles)
-            code = open(chosen, "r").read()
+            code = open(os.path.join(path, chosen), "r").read()
             components = [
                 BypassComponent(code=code),
             ]
