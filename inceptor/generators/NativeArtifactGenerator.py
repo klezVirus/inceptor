@@ -53,6 +53,7 @@ class NativeArtifactGenerator(Generator):
         self.placeholder = config.get("PLACEHOLDERS", "SHELLCODE")
         artifacts_path = config.get_path("DIRECTORIES", "ARTIFACTS")
         self.outfile = outfile
+        self.save_source = config.get_boolean("DEBUG", "save_source")
 
         # Metadata
         self.clone = Path(clone) if clone else None
@@ -208,10 +209,13 @@ class NativeArtifactGenerator(Generator):
         self.dll_payload = py_bin2sh(self.outfiles["exe-temp"])
 
     def clean(self):
+
         artifacts = []
         if self.dll:
+            self.dll_writer.clean(backup=self.save_source)
             artifacts.append(self.dll_writer.outfile)
         else:
+            self.exe_writer.clean(backup=self.save_source)
             artifacts.append(self.exe_writer.outfile)
         for file in artifacts:
             Path(file).unlink(missing_ok=True)

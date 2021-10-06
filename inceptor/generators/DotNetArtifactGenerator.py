@@ -22,7 +22,6 @@ from obfuscators.Obfuscator import Obfuscator
 from utils.MetaTwin import MetaTwin
 from utils.console import Console
 from utils.utils import get_project_root, file_signature, shellcode_signature, sgn
-from signers import CarbonCopy
 
 
 class DotNetArtifactGenerator(Generator):
@@ -56,6 +55,7 @@ class DotNetArtifactGenerator(Generator):
         self.hide_window = hide_window
         self.sgn = sgn
         self.obfuscate = obfuscate
+        self.save_source = config.get_boolean("DEBUG", "save_source")
 
         # Code Signing
         self.sign = sign
@@ -204,7 +204,7 @@ class DotNetArtifactGenerator(Generator):
             raise FileNotFoundError(f"Error generating {os.path.basename(outfile).upper()} DLL")
 
     def clean(self):
-        self.writer.clean()
+        self.writer.clean(backup=self.save_source)
         base_paths = [get_project_root(), "temp"]
         for base_path in base_paths:
             wildcards = [

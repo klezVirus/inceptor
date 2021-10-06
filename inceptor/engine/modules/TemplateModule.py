@@ -66,16 +66,25 @@ class TemplateModule:
                    "AssemblyInfoModule.py",
                    "EncoderModule.py",
                    "PowerShellModule.py",
+                   "ShellcodeRetrievalModule.py"
                ]
         ]
         module_names = ["_".join(re.sub(r"([A-Z])", r" \1", f.replace("Module.py", "")).split()).lower() for f in
                         all_files]
         if not init:
             return module_names
-        return [TemplateModule.from_name(m, kwargs=kwargs) for m in module_names]
+        modules = []
+        for m in module_names:
+            try:
+                modules.append(TemplateModule.from_name(m, kwargs=kwargs))
+            except:
+                continue
+        return modules
 
     @staticmethod
     def from_name(name, **kwargs):
+        if name.find("__init__") > -1:
+            raise ModuleNotLoadableException()
         try:
             _module_name = "".join([n.capitalize() for n in str(name).split("_")])
             _class_string = f"engine.modules.{_module_name}Module.{_module_name}Module"

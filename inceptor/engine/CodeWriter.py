@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import tempfile
 
@@ -181,6 +182,9 @@ class CodeWriter:
         with open(outfile, "w") as out:
             out.write(raw)
 
-    def clean(self):
+    def clean(self, backup=False):
+
         if os.path.isfile(self.outfile):
+            if backup:
+                shutil.copy2(self.outfile, str(Config().get_path("DIRECTORIES", "backup")))
             os.unlink(self.outfile)

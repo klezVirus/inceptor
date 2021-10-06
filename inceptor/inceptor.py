@@ -86,6 +86,8 @@ inceptor: A Windows-based PE Packing framework designed to help
     native_parser.add_argument(
         '--sgn', required=False, default=False, action='store_true', help='Uses Shikata-Ga-Nai as assembly encoder')
     native_parser.add_argument(
+        '-p', '--params', required=False, type=str, default=None, help='Params to pass to the wrapped .NET executable')
+    native_parser.add_argument(
         '-s', '--sign', required=False, default=False, action='store_true',
         help='Sign the binary (default: CarbonCopy)')
     native_parser.add_argument(
@@ -272,6 +274,7 @@ inceptor: A Windows-based PE Packing framework designed to help
                                             transformer=args.transformer,
                                             pinject=args.pinject,
                                             process=args.process,
+                                            params=args.params,
                                             modules=modules,
                                             sgn=args.sgn,
                                             delay=args.delay,
