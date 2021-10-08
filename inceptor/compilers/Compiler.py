@@ -32,6 +32,9 @@ class Compiler(ABC):
         if aargs:
             self.aargs = aargs
 
+    def set_exports(self, exports):
+        pass
+
     @abstractmethod
     def set_libraries(self, libs: list):
         pass
@@ -86,3 +89,6 @@ class Compiler(ABC):
         except:
             traceback.print_exc()
             pass
+
+    def set_linker_options(self, outfile=None, libraries: list = None, other=""):
+        pass

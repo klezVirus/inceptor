@@ -21,6 +21,9 @@ class ClCompiler(Compiler):
         libraries = libraries + self.std_library()
         return " ".join([f'"{lib}"' for lib in libraries])
 
+    def set_exports(self, exports):
+        self.set_linker_options(other=f'/DEF:"{os.path.abspath(exports)}"')
+
     def std_library(self):
         return ["kernel32.lib",
                 "user32.lib",
@@ -158,7 +161,7 @@ class ClCompiler(Compiler):
         if not self.aargs or self.aargs == "":
             self.aargs = f'/link '
         if libraries:
-            self.aargs = f' /DYNAMICBASE {self.format_libraries(libraries=libraries)}'
+            self.aargs += f' /DYNAMICBASE {self.format_libraries(libraries=libraries)}'
         if outfile:
             self.aargs += f' /OUT "{outfile}"'
         self.aargs += f" {other}"

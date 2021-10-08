@@ -143,15 +143,14 @@ class NativeArtifactGenerator(Generator):
                 modules=[]
             )
         self.dll_payload = None
-        self.dll_compiler_args = self.compiler.default_dll_args(self.outfiles["dll-temp"])
+        self.compiler.default_dll_args(self.outfiles["dll-temp"])
         if self.exports and os.path.isfile(self.exports):
-            self.dll_compiler_args["/DEF"] = f'"{os.path.abspath(self.exports)}"'
+            self.compiler.set_exports(self.exports)
 
     def compile_dll(self, shellcode=None):
         if not shellcode:
             shellcode = self.dll_payload
         self.dll_writer.write_source(shellcode=shellcode)
-        self.compiler.aargs = ""
         self.compiler.default_dll_args(outfile=self.outfiles["dll-temp"])
         self.compiler.compile([self.dll_writer.outfile])
         if not os.path.isfile(self.outfiles["dll-temp"]):
