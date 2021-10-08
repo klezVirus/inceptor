@@ -106,7 +106,7 @@ class LazySign(Signer):
         steps = [
             [
                 "Signing binary with spoofed certificate",
-                f"\"{self.signtool}\" sign /debug /f \"{str(pfx_file)}\" /t \"{Signer.TIMESTAMP_URL_T}\" \"{signee}\"",
+                f"\"{self.signtool}\" sign /debug /f \"{str(pfx_file)}\" /t \"{Signer.TIMESTAMP_URL_T}\" \"{signed}\"",
                 "Failed to sign binary"
             ],
         ]
