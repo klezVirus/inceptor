@@ -21,7 +21,7 @@ class PowerShellArtifactGenerator(Generator):
                  arch: str = None,
                  sgn: bool = False,
                  pinject: bool = False,
-                 process: str = None,
+                 process: list = None,
                  classname: str = None,
                  params: str = None,
                  function: str = None,
@@ -52,17 +52,13 @@ class PowerShellArtifactGenerator(Generator):
             # print(f"[-] Warning: Transformer {self.transformer.__class__.__name__} does not support parameters")
             self.need_parameter_module = True
 
-        self.writer = CodeWriter(
-            file=file,
-            modules=modules,
-            delay=delay,
-            converter=self.transformer,
-            language=Language.POWERSHELL,
-            pinject=self.pinject,
-            process=self.process,
-            arch=arch
-            )
-        self.writer.load_chain(chain=chain)
+        # Replaced write creation with writer parameter saving
+        self.writer = None
+        self.file = file
+        self.delay = delay
+        self.pinject = pinject
+        self.process = process
+        self.modules = modules
 
     def obfuscate_wrapper(self):
         karmaleon = Karmaleon(filename=self.writer.outfile, outfile=self.writer.outfile)
@@ -91,6 +87,20 @@ class PowerShellArtifactGenerator(Generator):
             Console.auto_line(f"  [>] Phase {step}.{substep}: Using Inceptor chained encoder to encode the shellcode")
             Console.auto_line(f"  [>] Encoder Chain: {self.chain.to_string()}")
             shellcode = self.chain.encode(shellcode)
+
+        self.writer = CodeWriter(
+            file=self.file,
+            modules=self.modules,
+            delay=self.delay,
+            converter=self.transformer,
+            language=Language.POWERSHELL,
+            pinject=self.pinject,
+            process=self.process,
+            arch=self.arch,
+            shellcode=shellcode
+            )
+        self.writer.load_chain(chain=self.chain)
+
         Console.auto_line(f"[*] Phase 3: Generating wrapper using {self.writer.template.template_name}")
         self.writer.write_source(shellcode=shellcode)
         if self.obfuscate:

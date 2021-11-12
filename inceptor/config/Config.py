@@ -1,6 +1,5 @@
 import configparser
 import os
-import traceback
 from pathlib import Path
 
 from utils.utils import get_project_root
@@ -116,6 +115,9 @@ class Config(object):
         content = open(self.default_config).read()
         with open(self.file, "w") as default:
             default.write(content)
+
+    def get_temp_folder(self):
+        return self.get_path("DIRECTORIES", "WRITER")
 
 
 if __name__ == "__main__":

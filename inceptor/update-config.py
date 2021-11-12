@@ -114,6 +114,10 @@ def update_config():
     except:
         pass
     try:
+        update_additional_compilers()
+    except KeyboardInterrupt:
+        sys.exit(1)
+    try:
         update_llvm_compiler()
     except KeyboardInterrupt:
         sys.exit(1)
@@ -154,6 +158,8 @@ def update_compilers(base_path, config: Config, commit=False):
         "MSBUILDx64_COMPILER": [],
         "LIBx86_COMPILER": [],
         "LIBx64_COMPILER": [],
+        "CVTRESx86_COMPILER": [],
+        "CVTRESx64_COMPILER": [],
         "VCVARSALL": []
     }
     found = [False] * len(versions.keys())
@@ -209,6 +215,16 @@ def update_compilers(base_path, config: Config, commit=False):
             print(f"  [+] Located LIB.EXE (64-bit) at {path}")
             found[9] = True
             versions["LIBx64_COMPILER"].append(str(path))
+        elif path.name == "cvtres.exe" and path.parent.name == "x86" and path.parent.parent.name == "Hostx86":
+            c.set("COMPILERS", f"CVTRESx86_COMPILER", str(path))
+            print(f"  [+] Located CVTRES.EXE (32-bit) at {path}")
+            found[8] = True
+            versions["CVTRESx86_COMPILER"].append(str(path))
+        elif path.name == "cvtres.exe" and path.parent.name == "x64" and path.parent.parent.name == "Hostx64":
+            c.set("COMPILERS", f"CVTRESx64_COMPILER", str(path))
+            print(f"  [+] Located CVTRES.EXE (64-bit) at {path}")
+            found[9] = True
+            versions["CVTRESx64_COMPILER"].append(str(path))
 
     for path in Path(base_path).rglob('*.bat'):
         if path.name == "vcvarsall.bat":
@@ -282,6 +298,36 @@ def update_llvm_compiler(max_recurse=1):
             with py7zr.SevenZipFile(path, mode='r') as z:
                 z.extractall(path=str(destination))
         update_llvm_compiler(max_recurse=max_recurse)
+
+
+def update_additional_compilers():
+    c = Config()
+    base_path = "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\"
+
+    print("[*] Checking Windows Resource Compiler")
+    found = [False, False]
+    versions = {
+        "rcx86_compiler": [],
+        "rcx64_compiler": []
+    }
+    for path in Path(base_path).rglob('rc.exe'):
+        if path.parent.name == "x86":
+            print(f"  [+] Located RC x86 utility at {path}")
+            found[0] = True
+            versions["rcx86_compiler"].append(str(path))
+        elif path.parent.name == "x64":
+            print(f"  [+] Located RC x64 utility at {path}")
+            found[1] = True
+            versions["rcx64_compiler"].append(str(path))
+
+    update_section(c, "COMPILERS", versions)
+    if not all(found):
+        print("[-] Windows RC not installed")
+        os.startfile(WIN_SDK)
+        sys.exit(1)
+    else:
+        print("[+] Windows RC installed")
+        c.save_config()
 
 
 def update_signers():

@@ -1,14 +1,19 @@
 import base64
 import os
 import re
+import traceback
 from binascii import hexlify
 
 from config.Config import Config
 from encoders.EncoderChain import EncoderChain
+from engine.component.ShellcodeRetrievalComponent import ShellcodeRetrievalComponent
 from engine.component.UsingComponent import UsingComponent
+from engine.modules.IShellcodeRetrievalModule import IShellcodeRetrievalModule
+from engine.modules.ShellcodeRetrievalModule import ShellcodeRetrievalModule
 from engine.modules.AdditionalSourceModule import AdditionalSourceModule
 from engine.modules.AssemblyInfoModule import AssemblyInfoModule
 from engine.modules.EncoderModule import EncoderModule
+from engine.structures.ResourceSet import ResourceSet
 from enums.Imports import ImportRegex
 from enums.Language import Language
 
@@ -19,7 +24,7 @@ class TemplateException(Exception):
 
 
 class Template:
-    def __init__(self, path=None, language=Language.CSHARP, chain: EncoderChain = None):
+    def __init__(self, path=None, language=Language.CSHARP, chain: EncoderChain = None, ignore_errors=False):
         self.path = path
         self.imports = []
         self.modules, self.call_decode = chain.translate(language=language) if chain else [], ""
@@ -28,21 +33,21 @@ class Template:
         self.shellcode_placeholder = Config().get("PLACEHOLDERS", "SHELLCODE")
         self.call_placeholder = Config().get("PLACEHOLDERS", "CALL")
         if self.language == Language.POWERSHELL:
-            self.shellcode_placeholder = f"<{self.shellcode_placeholder}>"
             self.call_placeholder = self.call_placeholder.replace("/", "")
-        self.load_template(path)
+        self.load_template(path, ignore_errors=ignore_errors)
         self.template_name = os.path.splitext(path)[0].upper().split("\\")[-1]
         self.components = []
         self.libraries = []
         self.defined = []
         self.shellcode_type = bytes
+        self.shellcode_retrieval_module: ShellcodeRetrievalModule = None
 
     def identify_imports(self, raw_template):
         matches = ImportRegex.from_lang(language=self.language).finditer(raw_template, re.MULTILINE)
         for m in matches:
             self.imports.append(m)
 
-    def load_template(self, path):
+    def load_template(self, path, ignore_errors=False):
         if not path or not os.path.isfile(path):
             return
         try:
@@ -52,7 +57,7 @@ class Template:
             print(f"[-] Exception in load_template while opening template file {path}")
             print(f"[-] Exception: {e}")
             return
-        if raw_template.find(self.shellcode_placeholder) < 0:
+        if raw_template.find(self.shellcode_placeholder) < 0 and not ignore_errors:
             raise TemplateException(f"[-] Error: Template missing SHELLCODE placeholder!")
         self.identify_imports(raw_template)
         self.template = base64.b64encode(raw_template.encode())
@@ -70,6 +75,10 @@ class Template:
         self.libraries = []
         self.components = []
         for module in self.modules:
+            if not module:
+                continue
+            if isinstance(module, IShellcodeRetrievalModule):
+                self.shellcode_retrieval_module = module
             if not isinstance(module, EncoderModule) or (
                     isinstance(module, EncoderModule) and module.name not in self.defined
             ):
@@ -84,6 +93,17 @@ class Template:
             if isinstance(module, AssemblyInfoModule) or isinstance(module, AdditionalSourceModule):
                 sources.append(module.path)
         return sources
+
+    def collect_resources(self):
+        resources = ResourceSet()
+        for module in self.modules:
+            if not hasattr(module, "resources"):
+                continue
+            if not module.resources:
+                continue
+            if not module.resources.is_empty():
+                resources.append(module.resources)
+        return resources
 
     def add_module(self, module):
         self.modules.append(module)
@@ -107,24 +127,7 @@ class Template:
         self.template = base64.b64encode(raw_template.encode())
 
     def craft(self, shellcode):
-        if self.language == Language.CSHARP:
-            if isinstance(shellcode, bytes):
-                shellcode = hexlify(shellcode).decode()
-                return "new byte[]{" + ",".join([f"0x{shellcode[i:i + 2]}" for i in range(0, len(shellcode), 2)]) + "}"
-            # shellcode = "".join([f"\\x{shellcode[i:i + 2]}" for i in range(0, len(shellcode), 2)])
-            return f"\"{shellcode}\""
-        elif self.language == Language.CPP:
-            if isinstance(shellcode, bytes):
-                shellcode = hexlify(shellcode).decode()
-                shellcode = "{" + ",".join([f"0x{shellcode[i:i + 2]}" for i in range(0, len(shellcode), 2)]) + "}"
-            if isinstance(shellcode, str):  # and not re.match(r"^(\\x[A-Fa-f0-9]{2})+$", shellcode):
-                return Template.fix_size(shellcode)
-        elif self.language == Language.POWERSHELL:
-            if isinstance(shellcode, bytes):
-                shellcode = hexlify(shellcode).decode()
-                return "@(" + ",".join([f"0x{shellcode[i:i + 2]}" for i in range(0, len(shellcode), 2)]) + ")"
-            else:
-                return f"\"{shellcode}\""
+        return self.shellcode_retrieval_module.craft(shellcode, language=self.language)
 
     def clean(self, template):
         new_content = []
@@ -137,14 +140,20 @@ class Template:
     def generate(self, shellcode=None):
         raw_template = base64.b64decode(self.template).decode()
         for c in self.components:
+            #
+            c.placeholder_style(language=self.language)
             # Avoids duplicating imports
             if isinstance(c, UsingComponent):
                 if c.code.strip() in self.imports:
                     continue
-            c.placeholder_style(language=self.language)
-            raw_template = raw_template.replace(c.placeholder, c.code + f"\n{c.placeholder}")
+            if isinstance(c, ShellcodeRetrievalComponent):
+                c.use_raw_placeholder()
+                raw_template = raw_template.replace(c.placeholder, c.code)
+                raw_template = raw_template.replace("####SHELLCODE_LENGTH####", c.shellcode_length)
+            else:
+                raw_template = raw_template.replace(c.placeholder, c.code + f"\n{c.placeholder}")
         if shellcode:
-            raw_template = raw_template.replace(self.shellcode_placeholder, self.craft(shellcode))
+            # raw_template = raw_template.replace(self.shellcode_placeholder, self.craft(shellcode))
             raw_template = raw_template.replace(self.call_placeholder, self.call_decode + f"\n{self.call_placeholder}")
         raw_template = self.clean(raw_template)
         return raw_template

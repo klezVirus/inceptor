@@ -16,6 +16,7 @@ from encoders.EncoderChain import EncoderChain
 from encoders.HexEncoder import HexEncoder
 from engine.CodeWriter import CodeWriter
 from engine.Filter import Filter
+from engine.structures.enums.ResourceType import ResourceType
 from enums.Language import Language
 from generators.Generator import Generator
 from obfuscators.Obfuscator import Obfuscator
@@ -36,7 +37,7 @@ class DotNetArtifactGenerator(Generator):
                  delay: int = None,
                  sgn: bool = False,
                  pinject: bool = False,
-                 process: str = None,
+                 process: list = None,
                  arch: str = None,
                  classname: str = None,
                  function: str = None,
@@ -49,8 +50,9 @@ class DotNetArtifactGenerator(Generator):
                  steal_from: str = None
                  ):
         super().__init__(file=file, chain=chain)
-        if chain.is_empty():
-            chain.push(HexEncoder())
+        # Not needed anymore
+        # if chain.is_empty():
+        #    chain.push(HexEncoder())
         config = Config()
         self.hide_window = hide_window
         self.sgn = sgn
@@ -109,15 +111,14 @@ class DotNetArtifactGenerator(Generator):
         self.is_packed = False
         self.dependencies = ""
 
-        self.writer = CodeWriter(file=file,
-                                 delay=delay,
-                                 pinject=pinject,
-                                 process=process,
-                                 _filter=_filter,
-                                 modules=modules,
-                                 converter=self.transformer,
-                                 arch=arch)
-        self.load_writer_chain()
+        # Replaced write creation with writer parameter saving
+        self.writer = None
+        self.file = file
+        self.delay = delay
+        self.pinject = pinject
+        self.process = process
+        self._filter = _filter
+        self.modules = modules
 
         self.placeholder = config.get("PLACEHOLDERS", "SHELLCODE")
         template_path = config.get_path("DIRECTORIES", "TEMPLATES")
@@ -189,7 +190,13 @@ class DotNetArtifactGenerator(Generator):
         elif self.hide_window:
             self.compiler.hide_window()
         self.refresh_libraries()
+        # Loop for additional resources. Must resolve all of this non-sense using a manager
+        for res in self.writer.resources.memory:
+            # For the moment, we just considering ICONs, but we'll need to implement
+            if res.resource_type == ResourceType.ICO:
+                self.compiler.set_icon(icon=res.path)
         self.compiler.compile(self.writer.source_files)
+
         if not os.path.isfile(self.outfiles['temp']):
             Console.auto_line("  [-] Failure: Error during compilation")
             raise FileNotFoundError("Error generating EXE")
@@ -198,13 +205,19 @@ class DotNetArtifactGenerator(Generator):
         self.compiler.default_dll_args(outfile=outfile)
         self.compiler.set_libraries(libs=libs)
         self.compiler.set_architecture(arch=self.arch)
+        # Loop for additional resources. Must resolve all of this non-sense using a manager
+        for res in self.writer.resources:
+            # For the moment, we just considering ICONs, but we'll need to implement
+            if res.resource_type == ResourceType.ICO:
+                continue
         self.compiler.compile([source])
         if not os.path.isfile(outfile):
             Console.auto_line("  [-] Failure: Error during compilation")
             raise FileNotFoundError(f"Error generating {os.path.basename(outfile).upper()} DLL")
 
     def clean(self):
-        self.writer.clean(backup=self.save_source)
+        if self.writer:
+            self.writer.clean(backup=self.save_source)
         base_paths = [get_project_root(), "temp"]
         for base_path in base_paths:
             wildcards = [
@@ -284,6 +297,18 @@ class DotNetArtifactGenerator(Generator):
             Console.auto_line(f"  [>] Phase {step}.{substep}: Using Inceptor chained encoder to encode the shellcode")
         Console.auto_line(f"  [>] Encoder Chain: {self.chain.to_string()}")
         final_shellcode = self.chain.encode(shellcode_bytes)
+        self.writer = CodeWriter(
+            file=self.file,
+            delay=self.delay,
+            pinject=self.pinject,
+            process=self.process,
+            _filter=self._filter,
+            modules=self.modules,
+            converter=self.transformer,
+            arch=self.arch,
+            shellcode=final_shellcode
+        )
+        self.load_writer_chain()
         step += 1
         substep = 1
         # print(final_shellcode)

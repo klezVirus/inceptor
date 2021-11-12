@@ -164,6 +164,14 @@ def detect_arch(file):
         return ImageFileMachine.from_bytes(raw)
 
 
+def get_temporary_file(ext=None):
+    return tempfile.NamedTemporaryFile(
+        dir=os.path.join(get_project_root(), "temp"),
+        suffix=ext if ext else "",
+        delete=True
+    ).name
+
+
 if __name__ == '__main__':
     try:
         payload = mssql_hex(sys.argv[1])

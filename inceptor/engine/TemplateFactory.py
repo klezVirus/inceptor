@@ -2,6 +2,7 @@ import os
 import sys
 import re
 import glob
+import traceback
 
 from config.Config import Config
 from converters.Donut import Donut
@@ -17,8 +18,27 @@ from utils.utils import get_project_root, isDotNet
 class TemplateFactory:
 
     @staticmethod
-    def from_path(path, language=Language.CSHARP, _filter: Filter = None):
+    def get_module_template(obj, language, _filter: Filter = None):
+        directory = obj.__class__.__name__.lower().replace("module", "")
+        path = Config().get_path("DIRECTORIES", "templates").joinpath(language.name.lower()).joinpath("modules").joinpath(directory)
+        template = TemplateFactory.from_path(path, language=language, _filter=_filter, is_module=True)
+        if not template:
+            return FileNotFoundError(f"{path} not found")
+        return template
+
+    @staticmethod
+    def get_srm_template(obj, language, _filter: Filter = None):
+        directory = obj.__class__.__name__.lower().replace("module", "")
+        path = Config().get_path("DIRECTORIES", "templates").joinpath(language.name.lower()).joinpath("modules").joinpath("shellcoderetrieval").joinpath(directory)
+        template = TemplateFactory.from_path(path, language=language, _filter=_filter, is_module=True)
+        if not template:
+            return FileNotFoundError(f"{path} not found")
+        return template
+
+    @staticmethod
+    def from_path(path, language=Language.CSHARP, _filter: Filter = None, is_module=False):
         allfiles = []
+        temp = ""
         if os.path.isfile(path):
             return Template(path=path, language=language)
         elif os.path.isdir(path):
@@ -27,14 +47,17 @@ class TemplateFactory:
             allfiles = [f for f in allfiles if _filter.match(f)]
         if len(allfiles) > 1:
             temp = TemplateFactory.choose_template(allfiles)
-        else:
+        elif len(allfiles) == 1:
             temp = allfiles[0]
+        else:
+            Console.fail_line("[-] Template not found")
+            exit(1)
 
         path = os.path.join(path, temp)
         if not os.path.isfile(path=path):
             Console.auto_line("  [-] Error with template")
             sys.exit(1)
-        return Template(path=path, language=language)
+        return Template(path=path, language=language, ignore_errors=is_module)
 
     @staticmethod
     def from_converter(file=None,

@@ -12,6 +12,7 @@ from converters.TransformerFactory import TransformerFactory
 from encoders.EncoderChain import EncoderChain
 from engine.CodeWriter import CodeWriter
 from engine.Filter import Filter
+from engine.structures.enums.ResourceType import ResourceType
 from enums.Language import Language
 from generators.Generator import Generator
 from signers import CarbonCopy
@@ -29,7 +30,7 @@ class NativeArtifactGenerator(Generator):
                  sgn: bool = False,
                  transformer=None,
                  pinject: bool = False,
-                 process: str = None,
+                 process: list = None,
                  delay: int = None,
                  arch: str = None,
                  sign: bool = False,
@@ -113,45 +114,68 @@ class NativeArtifactGenerator(Generator):
         if not self.dll:
             self.compiler.default_exe_args(self.outfiles["exe-temp"])
 
-            # EXE Writer
-            self.exe_writer = CodeWriter(language=Language.CPP,
-                                         pinject=pinject,
-                                         process=process,
-                                         delay=delay,
-                                         modules=modules,
-                                         _filter=Filter(exclude=["dll"]),
-                                         arch=arch)
-            self.exe_writer.load_chain(chain=self.chain)
+        # Replaced write creation with writer parameter saving
+        self.writer = None
+        self.file = file
+        self.delay = delay
+        self.pinject = pinject
+        self.process = process
+        self._filter = Filter(exclude=["dll"])
+        self.modules = modules
+        self.language = Language.CPP
 
-        # DLL Writer
-        elif self.dll:
-            _dll_filter = Filter(include=["dll"])
-
-            self.dll_writer = CodeWriter(
-                language=Language.CPP,
-                pinject=pinject,
-                process=process,
-                delay=delay,
-                _filter=_dll_filter,
-                modules=modules
-            )
-        if self.dll_wrap:
-            self.dll_writer = CodeWriter(
-                language=Language.CPP,
-                template=config.get_path("DIRECTORIES", "DLL"),
-                _filter=Filter(include=["write-execute"]),
-                modules=[]
-            )
         self.dll_payload = None
         self.compiler.default_dll_args(self.outfiles["dll-temp"])
         if self.exports and os.path.isfile(self.exports):
             self.compiler.set_exports(self.exports)
+
+    def init_writers(self, shellcode):
+        # This is some real spaghetti code
+        # The code is a mess overall, but please get rid of these multiple writers
+        # Just one writer, please
+        if not self.dll:
+            self.exe_writer = CodeWriter(language=Language.CPP,
+                                         pinject=self.pinject,
+                                         process=self.process,
+                                         delay=self.delay,
+                                         modules=self.modules,
+                                         _filter=Filter(exclude=["dll"]),
+                                         arch=self.arch,
+                                         shellcode=shellcode
+                                         )
+            self.exe_writer.load_chain(chain=self.chain)
+
+        elif self.dll:
+            self.dll_writer = CodeWriter(
+                language=Language.CPP,
+                pinject=self.pinject,
+                process=self.process,
+                delay=self.delay,
+                _filter=Filter(include=["dll"]),
+                modules=self.modules,
+                shellcode=shellcode
+            )
+            self.dll_writer.load_chain(chain=self.chain)
+        if self.dll_wrap:
+            self.dll_writer = CodeWriter(
+                language=Language.CPP,
+                template=Config().get_path("DIRECTORIES", "DLL"),
+                _filter=Filter(include=["write-execute"]),
+                modules=[],
+                shellcode=shellcode
+            )
+            self.dll_writer.load_chain(chain=self.chain)
 
     def compile_dll(self, shellcode=None):
         if not shellcode:
             shellcode = self.dll_payload
         self.dll_writer.write_source(shellcode=shellcode)
         self.compiler.default_dll_args(outfile=self.outfiles["dll-temp"])
+        # Loop for additional resources. Must resolve all of this non-sense using a manager
+        for res in self.dll_writer.resources:
+            # For the moment, we just considering ICONs, but we'll need to implement
+            if res.resource_type == ResourceType.ICO:
+                continue
         self.compiler.compile([self.dll_writer.outfile])
         if not os.path.isfile(self.outfiles["dll-temp"]):
             raise FileNotFoundError("Error generating DLL")
@@ -196,6 +220,13 @@ class NativeArtifactGenerator(Generator):
         self.exe_writer.template.process_modules()
         self.compiler.default_exe_args(self.outfiles["exe-temp"])
         self.compiler.set_libraries(libs=self.exe_writer.template.libraries)
+        self.compiler.add_include_directory(directory=str(Config().get_temp_folder()))
+        # Loop for additional resources. Must resolve all of this non-sense using a manager
+        for res in self.exe_writer.resources.memory:
+            # For the moment, we just considering ICONs, but we'll need to implement
+            if res.resource_type == ResourceType.ICO:
+                self.compiler.set_linker_options(other=res.path)
+
         if self.hide_window:
             self.compiler.hide_window()
         status = self.compiler.compile([self.exe_writer.outfile] + self.obj_files)
@@ -208,12 +239,12 @@ class NativeArtifactGenerator(Generator):
         self.dll_payload = py_bin2sh(self.outfiles["exe-temp"])
 
     def clean(self):
-
+        input()
         artifacts = []
-        if self.dll:
+        if self.dll_writer:
             self.dll_writer.clean(backup=self.save_source)
             artifacts.append(self.dll_writer.outfile)
-        else:
+        if self.exe_writer:
             self.exe_writer.clean(backup=self.save_source)
             artifacts.append(self.exe_writer.outfile)
         for file in artifacts:
@@ -282,6 +313,7 @@ class NativeArtifactGenerator(Generator):
             Console.auto_line(f"  [>] Phase {step}.{substep}: Using Inceptor chained-encoder to encode the shellcode")
             Console.auto_line(f"  [>] Encoder Chain: {self.chain.to_string()}")
         shellcode = self.chain.encode(shellcode_bytes)
+        self.init_writers(shellcode=shellcode)
         step += 1
         template = self.exe_writer.template.template_name if not self.dll else self.dll_writer.template.template_name
         temporary_file = f".\\temp\\{os.path.basename(self.exe_writer.outfile)}" if self.exe_writer else self.dll_writer.outfile

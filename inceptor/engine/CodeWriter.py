@@ -9,6 +9,8 @@ from engine.Filter import Filter
 from engine.Template import Template
 from engine.TemplateFactory import TemplateFactory
 from engine.modules.AssemblyInfoModule import AssemblyInfoModule
+from engine.modules.IShellcodeRetrievalModule import IShellcodeRetrievalModule
+from engine.modules.ShellcodeRetrievalModule import ShellcodeRetrievalModule
 from engine.modules.TemplateModule import TemplateModule, ModuleNotCompatibleException, ModuleNotLoadableException, \
     ModuleNotFoundException
 from enums.Architectures import Arch
@@ -21,20 +23,16 @@ class CodeWriter:
                  converter=None,
                  delay: int = None,
                  pinject: bool = False,
-                 process: str = None,
+                 process: list = None,
                  language: Language = Language.CSHARP,
                  template: str = None,
                  _filter: Filter = None,
                  modules: list = None,
-                 arch: str = "x64"):
+                 arch: str = "x64",
+                 shellcode: bytes = None):
         self.debug = Config().get_boolean("DEBUG", "writer")
         self.additional_sources = []
         self.language = language
-        self.bypass_dll = tempfile.NamedTemporaryFile(
-            delete=True,
-            dir=str(Config().get_path("DIRECTORIES", "WRITER")),
-            suffix=".dll"
-        ).name
 
         dinvoke = len([m for m in modules if m.lower() == "dinvoke"]) > 0
         syscalls = len([m for m in modules if m.lower() == "syscalls"]) > 0
@@ -47,7 +45,8 @@ class CodeWriter:
             "syscalls": syscalls,
             "process": process,
             "pinject": pinject,
-            "arch": self.arch
+            "arch": self.arch,
+            "shellcode": shellcode
         }
 
         modules_objects = []
@@ -56,7 +55,7 @@ class CodeWriter:
                 modules_objects.append(
                     TemplateModule.from_name(
                         name=m,
-                        kwargs=kwargs
+                        **kwargs
                     )
                 )
             except ModuleNotCompatibleException as e:
@@ -68,6 +67,16 @@ class CodeWriter:
             except ModuleNotFoundException as e:
                 if self.debug:
                     Console.fail_line(f"[ERROR] Module {m} was not found")
+
+        # SRM: Shellcode Retrieval Module
+        # Every payload needs necessarily a way to retrieve the shellcode
+        if not any([isinstance(m, IShellcodeRetrievalModule) for m in modules_objects]):
+            modules_objects.append(
+                TemplateModule.from_name(
+                    name="blob_shellcode_retrieval",
+                    **kwargs
+                )
+            )
 
         for m in modules_objects:
             if m and m.filter_string and m.filter_string != "":
@@ -104,6 +113,10 @@ class CodeWriter:
     def source_files(self):
         self.collect_sources()
         return [self.outfile] + self.additional_sources
+
+    @property
+    def resources(self):
+        return self.collect_resources()
 
     def set_assembly_info(self, version_info):
         path = tempfile.NamedTemporaryFile(
@@ -162,6 +175,9 @@ class CodeWriter:
 
     def collect_sources(self):
         self.additional_sources = self.template.collect_sources()
+
+    def collect_resources(self):
+        return self.template.collect_resources()
 
     def write_source(self, shellcode):
         if not shellcode:
