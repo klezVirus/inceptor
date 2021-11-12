@@ -89,7 +89,8 @@ class FindProcessModule(TemplateModule):
         library = None
 
         # Dereference kwargs
-        kwargs = kwargs["kwargs"]
+        while "kwargs" in kwargs.keys():
+            kwargs = kwargs["kwargs"]
 
         # We get the data we need to compute the template to use
         syscalls = kwargs["syscalls"] if "syscalls" in kwargs.keys() else None

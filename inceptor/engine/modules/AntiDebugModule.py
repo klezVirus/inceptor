@@ -24,8 +24,11 @@ class AntiDebugModule(TemplateModule):
     def __init__(self, **kwargs):
         libraries = []
 
-        language = kwargs["kwargs"]["language"]
-        arch = kwargs["kwargs"]["arch"]
+        while "kwargs" in kwargs.keys():
+            kwargs = kwargs["kwargs"]
+
+        language = kwargs["language"]
+        arch = kwargs["arch"]
 
         import_name = static_random_ascii_string(min_size=3, max_size=10)
         class_name = static_random_ascii_string(min_size=3, max_size=10)
@@ -72,8 +75,8 @@ class AntiDebugModule(TemplateModule):
         try:
             kwargs["dll"] = library
             kwargs["language"] = language
-            kwargs["template"] = self.generate(kwargs=kwargs)
-            self.build(kwargs=kwargs)
+            kwargs["template"] = self.generate(**kwargs)
+            self.build(**kwargs)
         except:
             traceback.print_exc()
             print(f"[-] Exception building {self.__class__.__name__}")
@@ -83,13 +86,13 @@ class AntiDebugModule(TemplateModule):
         super().__init__(name="AntiDebug", libraries=libraries, components=components, arch=arch)
 
     def generate(self, **kwargs):
-        if "language" not in kwargs["kwargs"].keys():
+        if "language" not in kwargs.keys():
             raise NotImplementedError(f"Module {self.__class__.__name__} needs a language to build")
-        language = kwargs["kwargs"]["language"]
+        language = kwargs["language"]
 
         if language == language.CSHARP:
             _filter = Filter(exclude=["dinvoke"])
-            if kwargs["kwargs"]["dinvoke"]:
+            if kwargs["dinvoke"]:
                 _filter = Filter(include=["dinvoke"])
 
             template = TemplateFactory.from_path(
@@ -112,20 +115,20 @@ class AntiDebugModule(TemplateModule):
                 ["####NAMESPACE####", "####CLASS####", "####FUNCTION####"]
         ):
             template.otf_replace(
-                code=kwargs["kwargs"][k],
+                code=kwargs[k],
                 placeholder=v
             )
 
-        if kwargs["kwargs"]["dinvoke"] and language == language.CSHARP:
+        if kwargs["dinvoke"] and language == language.CSHARP:
             template.add_module(DinvokeModule(language=Language.CSHARP))
 
         template.process_modules()
         return template
 
     def build(self, **kwargs):
-        if "language" not in kwargs["kwargs"].keys():
+        if "language" not in kwargs.keys():
             raise NotImplementedError(f"Module {self.__class__.__name__} needs a language to build")
-        language = kwargs["kwargs"]["language"]
+        language = kwargs["language"]
         nodebug_file = tempfile.NamedTemporaryFile(
                 delete=False,
                 dir=str(Config().get_path("DIRECTORIES", "WRITER"))
@@ -135,21 +138,21 @@ class AntiDebugModule(TemplateModule):
         else:
             nodebug_file += ".cpp"
 
-        template = kwargs["kwargs"]["template"]
+        template = kwargs["template"]
         with open(nodebug_file, "w") as out:
             out.write(template.content)
         if language == Language.CSHARP:
             compiler = CscCompiler()
-            compiler.default_dll_args(outfile=kwargs["kwargs"]["dll"])
+            compiler.default_dll_args(outfile=kwargs["dll"])
             compiler.set_libraries(template.libraries)
             compiler.compile([nodebug_file])
         else:
-            object_file = os.path.splitext(kwargs["kwargs"]["dll"])[0] + ".obj"
+            object_file = os.path.splitext(kwargs["dll"])[0] + ".obj"
             compiler = ClCompiler()
             compiler.default_obj_args(outfile=object_file)
             compiler.set_libraries(["dbghelp.lib"])
             compiler.compile([nodebug_file])
             compiler = LibCompiler()
-            compiler.default_args(outfile=kwargs["kwargs"]["dll"])
+            compiler.default_args(outfile=kwargs["dll"])
             compiler.compile([object_file])
 

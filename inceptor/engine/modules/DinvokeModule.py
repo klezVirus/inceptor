@@ -17,8 +17,12 @@ class DinvokeModule(TemplateModule):
         pass
 
     def __init__(self, **kwargs):
-        language = kwargs["kwargs"]["language"]
-        arch = kwargs["kwargs"]["arch"]
+        # Dereference kwargs
+        while "kwargs" in kwargs.keys():
+            kwargs = kwargs["kwargs"]
+        print(kwargs)
+        language = kwargs["language"]
+        arch = kwargs["arch"]
 
         self.filter_String = "dinvoke"
         if language == Language.CSHARP:

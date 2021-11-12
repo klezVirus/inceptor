@@ -14,51 +14,65 @@ from engine.modules.DinvokeModule import DinvokeModule
 from engine.modules.TemplateModule import TemplateModule, ModuleNotCompatibleException
 from enums.Architectures import Arch
 from enums.Language import Language
-from utils.utils import get_project_root, static_random_ascii_string
+from utils.utils import get_project_root, static_random_ascii_string, get_temporary_file
 
 
 class AmsiModule(TemplateModule):
 
     def __init__(self, **kwargs):
+        # Init variables
+        libraries = None
+        components = None
+        ext = None
+        library = None
 
+        # We get the data we need to compute the template to use
+        syscalls = kwargs["kwargs"]["syscalls"]
         dinvoke = kwargs["kwargs"]["dinvoke"]
         language = kwargs["kwargs"]["language"]
         arch = kwargs["kwargs"]["arch"]
 
-        libraries = []
-        components = None
+        # Whatever the language is, we'll need a source code file
+        source = get_temporary_file(ext=TemplateModule.get_extension_by_language(language=language))
+        header = get_temporary_file(ext=".h")
+
+        # And, if it's a "compiled" language, we'll need a library file, which might be a .lib or .dll
+        if language == Language.CSHARP:
+            ext = ".dll"
+        elif language == Language.CPP:
+            ext = ".lib"
+
+        if ext:
+            library = get_temporary_file(ext=ext)
+
+        # We will need a namespace
+        import_name = static_random_ascii_string(min_size=3, max_size=10)
+        # We will need a class name
+        class_name = static_random_ascii_string(min_size=3, max_size=10)
+        # We will need a function
+        function_name = static_random_ascii_string(min_size=3, max_size=10)
+        # We will also need the bypass mode
         bypass_mode = Config().get('MISC', 'bypass_mode')
 
+        # Now, we can fill the data for generate and build
+        kwargs = {
+            "language": language,
+            "syscalls": syscalls,
+            "dinvoke": dinvoke,
+            "import": import_name,
+            "class": class_name,
+            "function": function_name,
+            "library": library,
+            "arch": arch,
+            "source": source,
+            "header": header
+        }
+
         if language == Language.POWERSHELL:
-            path = str(Config().get_path("DIRECTORIES", "bypass"))
-            allfiles = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
-            chosen = TemplateFactory.choose_template(allfiles)
-            code = open(os.path.join(path, chosen), "r").read()
             components = [
-                BypassComponent(code=code),
+                BypassComponent(code=open(source).read()),
             ]
-
         elif language == Language.CSHARP:
-            import_name = static_random_ascii_string(min_size=3, max_size=10)
-            class_name = static_random_ascii_string(min_size=3, max_size=10)
-            function_name = static_random_ascii_string(min_size=3, max_size=10)
-
-            dll = tempfile.NamedTemporaryFile(
-                delete=True,
-                dir=str(Config().get_path("DIRECTORIES", "WRITER")),
-                suffix=".dll"
-            ).name
-
-            kwargs = {
-                "language": language,
-                "dinvoke": dinvoke,
-                "import": import_name,
-                "class": class_name,
-                "function": function_name,
-                "dll": dll,
-                "arch": arch
-            }
-
             try:
                 kwargs["template"] = self.generate(kwargs=kwargs)
                 self.build(kwargs=kwargs)
@@ -71,20 +85,18 @@ class AmsiModule(TemplateModule):
                 BypassComponent(f"{import_name}.{class_name}.{function_name}(\"{bypass_mode}\");"),
                 UsingComponent(f"{import_name}", language=language)
             ]
-            libraries = [f"{dll}"]
+            libraries = [library]
         else:
             raise ModuleNotCompatibleException()
 
         super().__init__(name="AmsiBypass", libraries=libraries, components=components, arch=arch)
 
     def generate(self, **kwargs):
+        language = kwargs["kwargs"]["language"]
         _filter = Filter(exclude=["dinvoke", "powershell"])
         if kwargs["kwargs"]["dinvoke"]:
             _filter = Filter(include=["dinvoke"], exclude=["powershell"])
-        template = TemplateFactory.from_path(
-            path=str(Config().get_path("DIRECTORIES", "bypass").absolute()),
-            _filter=_filter
-        )
+        template = TemplateFactory.get_module_template(self, language=language, _filter=_filter)
         if kwargs["kwargs"]["dinvoke"]:
             module = TemplateModule.from_name("dinvoke", kwargs=kwargs["kwargs"])
             template.add_module(module)
@@ -111,7 +123,7 @@ class AmsiModule(TemplateModule):
         with open(bypass_file, "w") as out:
             out.write(template.content)
         compiler = CscCompiler()
-        compiler.default_dll_args(outfile=kwargs["kwargs"]["dll"])
+        compiler.default_dll_args(outfile=kwargs["kwargs"]["library"])
         compiler.set_libraries(template.libraries)
         compiler.compile([bypass_file])
 
