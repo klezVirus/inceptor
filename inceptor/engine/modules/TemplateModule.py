@@ -95,9 +95,10 @@ class TemplateModule:
 
     @staticmethod
     def from_name(name, **kwargs):
-        for s in traceback.extract_stack():
-            print(s)
-        input()
+        if Config().get_boolean("DEBUG", "DEVELOPER"):
+            for s in traceback.extract_stack():
+                print(s)
+            input()
         if name.find("__init__") > -1:
             raise ModuleNotLoadableException()
         try:
