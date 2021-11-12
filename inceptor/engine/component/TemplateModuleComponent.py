@@ -22,6 +22,9 @@ class TemplateModuleComponent(ABC):
     def use_ps_placeholder(self):
         self.placeholder = self.placeholder.replace("/", "")
 
+    def use_raw_placeholder(self):
+        self.placeholder = self.placeholder.replace("/", "")
+
     def use_c_placeholder(self):
         if self.placeholder and self.placeholder[:2] != "//":
             self.placeholder = f"//{self.placeholder}"
