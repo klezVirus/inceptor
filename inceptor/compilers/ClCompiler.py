@@ -107,12 +107,13 @@ class ClCompiler(Compiler):
         self.args = {
             "/permissive-": None,
             "/GS": None,
-            "/GL": None,
+            "/Bt+": None,
+            "/d2cgsummary": None,
             "/W3": None,
             "/Gy": None,
             "/Zi": None,
             "/Gm-": None,
-            "/O2": None,
+            "/O2i": None,
             "/sdl": None,
             "/Zc:inline": None,
             "/Zc:wchar_t": None,
@@ -129,7 +130,6 @@ class ClCompiler(Compiler):
             "/WX-": None,
             "/Zc": "forScope",
             "/Gd": None,
-            "/Oi": None,
             "/MD": None,
             "/FC": None,
             "/EHsc": None,
@@ -157,7 +157,7 @@ class ClCompiler(Compiler):
             )
         return True
 
-    def set_linker_options(self, outfile=None, libraries: list = None, other=""):
+    def set_linker_options(self, outfile=None, libraries: list = None, other: str = ""):
         if not self.aargs or self.aargs == "":
             self.aargs = f'/link '
         if libraries:

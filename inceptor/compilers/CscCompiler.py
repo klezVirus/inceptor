@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from compilers.Compiler import Compiler
 from compilers.CompilerExceptions import OperationNotSupported
 from config.Config import Config
@@ -51,4 +53,8 @@ class CscCompiler(Compiler):
             for lib in libs:
                 self.args[f'/res:"{lib}"'] = None
             self.args["/r"] = ",".join([f'"{lib}"' for lib in libs])
+
+    def set_icon(self, icon: Path):
+        if icon:
+            self.args["/win32icon"] = f'"{str(icon.absolute())}"'
 
