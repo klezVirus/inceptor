@@ -103,6 +103,8 @@ class IconShellcodeRetrievalModule(IShellcodeRetrievalModule):
                 ShellcodeRetrievalComponent(code=f"{function_name}(&{kwargs['args']});",
                                             shellcode_length=self.shellcode_length),
             ]
+        else:
+            raise ModuleNotCompatibleException()
         # This part will be enabled after the work on the ICON module is finalised
         if language == Language.CSHARP:
             raise ModuleNotCompatibleException()
@@ -118,8 +120,6 @@ class IconShellcodeRetrievalModule(IShellcodeRetrievalModule):
                 CodeComponent(code=code),
                 ShellcodeRetrievalComponent(code=rf"{function_name}")
             ]
-        else:
-            raise ModuleNotCompatibleException()
         super().__init__(name=name, libraries=libraries, components=components, arch=arch, resources=resources)
 
     def generate(self, **kwargs):
