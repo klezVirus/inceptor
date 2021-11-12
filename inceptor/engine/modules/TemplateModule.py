@@ -5,7 +5,7 @@ from abc import abstractmethod
 from pydoc import locate
 
 from config.Config import Config
-from engine.component.TemplateModuleComponent import TemplateModuleComponent
+from engine.structures.ResourceSet import ResourceSet
 from enums.Architectures import Arch
 from enums.Language import Language
 
@@ -23,7 +23,7 @@ class ModuleNotFoundException(Exception):
 
 
 class TemplateModule:
-    def __init__(self, name: str = None, arch=Arch.x64, libraries: list = None, components: list = None):
+    def __init__(self, name: str = None, arch=Arch.x64, libraries: list = None, components: list = None, resources: ResourceSet = None):
         self.components = components if components else []
         self.libraries = libraries if libraries else []
         self.name = name
@@ -32,6 +32,9 @@ class TemplateModule:
         self.compile = False
         self.filter_string = ""
         self.loadable = True
+        self.resources = resources
+        if not resources:
+            self.resources = ResourceSet()
 
     def add_component(self, component):
         self.components.append(component)
@@ -82,7 +85,19 @@ class TemplateModule:
         return modules
 
     @staticmethod
+    def get_extension_by_language(language: Language):
+        if language == Language.CSHARP:
+            return ".cs"
+        elif language == Language.CPP:
+            return ".cpp"
+        elif language == Language.POWERSHELL:
+            return ".ps1"
+
+    @staticmethod
     def from_name(name, **kwargs):
+        for s in traceback.extract_stack():
+            print(s)
+        input()
         if name.find("__init__") > -1:
             raise ModuleNotLoadableException()
         try:
@@ -90,7 +105,7 @@ class TemplateModule:
             _class_string = f"engine.modules.{_module_name}Module.{_module_name}Module"
             # print(_class_string)
             _class = locate(_class_string)
-            _instance = _class(kwargs=kwargs['kwargs'])
+            _instance = _class(kwargs=kwargs)
             if not _instance.loadable or not hasattr(_instance, "loadable"):
                 raise ModuleNotLoadableException()
             return _instance

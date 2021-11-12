@@ -1,6 +1,12 @@
 import os
 import sys
 
+from compilers.ClCompiler import ClCompiler
+from compilers.CscCompiler import CscCompiler
+from compilers.LibCompiler import LibCompiler
+from config.Config import Config
+from engine.Filter import Filter
+from engine.TemplateFactory import TemplateFactory
 from engine.component.CodeComponent import CodeComponent
 from engine.component.FindProcessComponent import FindProcessComponent
 from engine.component.UsingComponent import UsingComponent
@@ -9,23 +15,96 @@ from enums.Language import Language
 from engine.component.BypassComponent import BypassComponent
 from engine.component.DelayComponent import DelayComponent
 from utils.console import Console
-from utils.utils import get_project_root, static_random_ascii_string
+from utils.utils import get_project_root, static_random_ascii_string, get_temporary_file
 
 
 class FindProcessModule(TemplateModule):
     def generate(self, **kwargs):
-        pass
+        # We recollect all details from kwargs
+        dinvoke = kwargs["dinvoke"]
+        language = kwargs["language"]
+        source = kwargs["source"]
+        header = kwargs["header"]
+
+        _filter = Filter(exclude=["dinvoke"])
+        if dinvoke:
+            _filter = Filter(include=["dinvoke"])
+        template = TemplateFactory.get_module_template(self, language=language, _filter=_filter)
+
+        if dinvoke:
+            module = TemplateModule.from_name("dinvoke", kwargs=kwargs)
+            template.add_module(module)
+
+        for k, v in zip(
+                ["import", "class", "function", "process"],
+                ["####NAMESPACE####", "####CLASS####", "####FUNCTION####", "####PROCESS####"]
+        ):
+            template.otf_replace(
+                code=kwargs[k],
+                placeholder=v
+            )
+        template.process_modules()
+
+        with open(source, "w") as source_code:
+            source_code.write(template.content)
+
+        with open(header, "w") as source_code:
+            source_code.write(f"DWORD {kwargs['function']}();")
+
+        return template
 
     def build(self, **kwargs):
-        pass
+        source = kwargs["source"]
+        language = kwargs["language"]
+        library = kwargs["library"]
+        template = kwargs["template"]
+        arch = kwargs["arch"]
+
+        # Let's put an early return on POWERSHELL
+        if language == Language.POWERSHELL:
+            return
+
+        object_file = None
+        if language == Language.CSHARP:
+            compiler = CscCompiler(arch=arch.value)
+            compiler.default_dll_args(outfile=library)
+        else:
+            compiler = ClCompiler(arch=arch.value)
+            object_file = os.path.splitext(library)[0] + ".obj"
+            compiler.default_obj_args(outfile=object_file)
+            compiler.add_include_directory(str(Config().get_path("DIRECTORIES", "WRITER")))
+        # compiler.set_libraries(template.libraries)
+        compiler.compile([source])
+
+        if object_file and os.path.isfile(object_file):
+            libc = LibCompiler(arch=arch.value)
+            libc.default_args(outfile=library)
+            libc.compile([object_file])
 
     def __init__(self, **kwargs):
+        # Init variables
+        libraries = None
+        components = None
+        ext = None
+        library = None
 
-        language = kwargs["kwargs"]["language"]
-        process = kwargs["kwargs"]["process"]
-        pinject = kwargs["kwargs"]["pinject"]
-        dinvoke = kwargs["kwargs"]["dinvoke"]
-        syscalls = kwargs["kwargs"]["syscalls"]
+        # Dereference kwargs
+        kwargs = kwargs["kwargs"]
+
+        # We get the data we need to compute the template to use
+        syscalls = kwargs["syscalls"] if "syscalls" in kwargs.keys() else None
+        dinvoke = kwargs["dinvoke"] if "dinvoke" in kwargs.keys() else None
+        language = kwargs["language"]
+        process = kwargs["process"]
+        pinject = kwargs["pinject"]
+
+        # Let's craft the process array into a C/C#/PS array
+        if language == Language.CPP:
+            process = [f'L"{p}.exe"' for p in process]
+        else:
+            process = [f'"{p}"' for p in process]
+
+        process = ",".join(process)
 
         if dinvoke or syscalls:
             Console.warn_line("[WARNING] Find process still doesn't support syscalls and manual mapping")
@@ -34,78 +113,76 @@ class FindProcessModule(TemplateModule):
             Console.auto_line(f"[-] {self.__class__.__name__} requires (-P|--pinject)!")
             sys.exit(1)
         if not process:
-            Console.auto_line(f"[-] {self.__class__.__name__} requires (-P0|--process)!")
+            Console.auto_line(f"[-] {self.__class__.__name__} requires (-PN|--process)!")
             sys.exit(1)
 
-        classname = static_random_ascii_string(min_size=3, max_size=10)
-        function = static_random_ascii_string(min_size=3, max_size=10)
+        arch = kwargs["arch"]
 
+        # Now let's warn everyone that this module still doesn't have a dinvoke/syscall version
+        if dinvoke or syscalls:
+            Console.warn_line("[#] This module has still no support for D/Invoke or Syscalls")
+
+        # Whatever the language is, we'll need a source code file
+        source = get_temporary_file(ext=TemplateModule.get_extension_by_language(language=language))
+        header = get_temporary_file(ext=".h")
+
+        # And, if it's a "compiled" language, we'll need a library file, which might be a .lib or .dll
         if language == Language.CSHARP:
-            components = [
-                UsingComponent(code=f"System.Diagnostics", language=language),
-                CodeComponent(code=fr"""
-                    public static class {classname}
-                    {{
-                        public static int {function}(string processName) {{
-                            int pid = Process.GetCurrentProcess().Id;
-                            Process[] processes = Process.GetProcessesByName(processName);
-                            if (processes.Length > 0) {{
-                                pid = processes[0].Id;
-                            }}
-                            return pid;
-                        }}
-                    }}
-                """),
-                FindProcessComponent(code=f'pid = {classname}.{function}("{process}");')
-            ]
+            ext = ".dll"
         elif language == Language.CPP:
+            ext = ".lib"
+
+        if ext:
+            library = get_temporary_file(ext=ext)
+
+        # We will need a namespace
+        import_name = static_random_ascii_string(min_size=3, max_size=10)
+        # We will need a class name
+        class_name = static_random_ascii_string(min_size=3, max_size=10)
+        # We will need a function
+        function_name = static_random_ascii_string(min_size=3, max_size=10)
+
+        # Now, we can fill the data for generate and build
+        kwargs = {
+            "language": language,
+            "syscalls": syscalls,
+            "dinvoke": dinvoke,
+            "import": import_name,
+            "class": class_name,
+            "function": function_name,
+            "library": library,
+            "arch": arch,
+            "source": source,
+            "header": header,
+            "process": process
+        }
+
+        # We can already update the libraries to contain the DLL/LIB
+        libraries = [library]
+
+        kwargs["template"] = self.generate(**kwargs)
+        self.build(**kwargs)
+
+        if language == Language.CPP:
+            header = header.replace('\\', '\\\\')
             components = [
-                UsingComponent(code="<windows.h>", language=language),
-                UsingComponent(code="<stdio.h>", language=language),
-                UsingComponent(code="<stdlib.h>", language=language),
-                UsingComponent(code="<Tlhelp32.h>", language=language),
-                UsingComponent(code="<string.h>", language=language),
-                CodeComponent(code=fr"""
-                    DWORD {function}(const wchar_t* processName);
-                    DWORD {function}(const wchar_t* processName) {{
-                        PROCESSENTRY32 processInfo;
-                        processInfo.dwSize = sizeof(processInfo);
-                        HANDLE processesSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
-                        if (processesSnapshot == INVALID_HANDLE_VALUE)
-                            return 0;
-                        Process32First(processesSnapshot, &processInfo);
-                        if (_wcsicmp(processName, processInfo.szExeFile) == 0)
-                        {{
-                            CloseHandle(processesSnapshot);
-                            return processInfo.th32ProcessID;
-                        }}
-                        while (Process32Next(processesSnapshot, &processInfo))
-                        {{
-                            if (_wcsicmp(processName, processInfo.szExeFile) == 0)
-                            {{
-                                CloseHandle(processesSnapshot);
-                                return processInfo.th32ProcessID;
-                            }}
-                        }}
-                        CloseHandle(processesSnapshot);
-                        return 0;
-                    }}
-                """),
-                FindProcessComponent(code=fr"""
-                    const wchar_t* proc = L"{process}.exe";
-                    pid = {function}(proc);
-                    """)
+                UsingComponent(f"\"{header}\"", language=language),
+                FindProcessComponent(code=f"pid = {function_name}();")
+            ]
+        elif language == Language.CSHARP:
+            components = [
+                UsingComponent(import_name, language=language),
+                FindProcessComponent(code=rf"""
+                        pid = {import_name}.{class_name}.{function_name}();
+                        """)
             ]
         elif language == Language.POWERSHELL:
             components = [
-                FindProcessComponent(code=fr"""
-                $list = (Get-Process {process})
-                if ($list.Length -gt 0){{ 
-                    $targetpid = $list[0].Id
-                }}
-                """)
+                CodeComponent(code=open(source).read()),
+                FindProcessComponent(code=rf"""
+                        $targetpid = {function_name}
+                        """)
             ]
         else:
             raise ModuleNotCompatibleException()
-        libraries = None
         super().__init__(name="FindProcess", libraries=libraries, components=components)
