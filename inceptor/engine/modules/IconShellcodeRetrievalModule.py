@@ -103,16 +103,16 @@ class IconShellcodeRetrievalModule(IShellcodeRetrievalModule):
                 ShellcodeRetrievalComponent(code=f"{function_name}(&{kwargs['args']});",
                                             shellcode_length=self.shellcode_length),
             ]
-        else:
-            raise ModuleNotCompatibleException()
         # This part will be enabled after the work on the ICON module is finalised
         if language == Language.CSHARP:
-
+            raise ModuleNotCompatibleException()
             components = [
                 UsingComponent(import_name, language=language),
                 ShellcodeRetrievalComponent(code=rf"""{import_name}.{class_name}.{function_name}();""")
             ]
+        # This part will be enabled after the work on the ICON module is finalised
         elif language == Language.POWERSHELL:
+            raise ModuleNotCompatibleException()
             code = open(source).read()
             components = [
                 CodeComponent(code=code),
