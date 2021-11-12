@@ -153,6 +153,7 @@ class NativeArtifactGenerator(Generator):
                 delay=self.delay,
                 _filter=Filter(include=["dll"]),
                 modules=self.modules,
+                arch=self.arch,
                 shellcode=shellcode
             )
             self.dll_writer.load_chain(chain=self.chain)
@@ -162,6 +163,7 @@ class NativeArtifactGenerator(Generator):
                 template=Config().get_path("DIRECTORIES", "DLL"),
                 _filter=Filter(include=["write-execute"]),
                 modules=[],
+                arch=self.arch,
                 shellcode=shellcode
             )
             self.dll_writer.load_chain(chain=self.chain)
@@ -171,8 +173,10 @@ class NativeArtifactGenerator(Generator):
             shellcode = self.dll_payload
         self.dll_writer.write_source(shellcode=shellcode)
         self.compiler.default_dll_args(outfile=self.outfiles["dll-temp"])
+        self.compiler.set_libraries(libs=self.dll_writer.template.libraries)
+        self.compiler.add_include_directory(directory=str(Config().get_temp_folder()))
         # Loop for additional resources. Must resolve all of this non-sense using a manager
-        for res in self.dll_writer.resources:
+        for res in self.dll_writer.resources.memory:
             # For the moment, we just considering ICONs, but we'll need to implement
             if res.resource_type == ResourceType.ICO:
                 continue
@@ -239,7 +243,7 @@ class NativeArtifactGenerator(Generator):
         self.dll_payload = py_bin2sh(self.outfiles["exe-temp"])
 
     def clean(self):
-        input()
+        # input()
         artifacts = []
         if self.dll_writer:
             self.dll_writer.clean(backup=self.save_source)
