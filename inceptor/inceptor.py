@@ -255,7 +255,7 @@ inceptor: A Windows-based PE Packing framework designed to help
 
     # Let's record the last command for other uses
     with open(HISTORY, "a") as history:
-        history.write(" ".join(sys.argv))
+        history.write("python " + " ".join(sys.argv) + "\n")
 
     if filetype == "dll" and isDotNet(binary_abs_path) and not (args.function and args.classname):
         Console.auto_line("[-] .NET DLLs require to specify both class and method names")
