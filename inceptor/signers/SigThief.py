@@ -184,14 +184,16 @@ class SigThief:
         if self.debug:
             Console.auto_line("[+] Signature ripped")
 
-    def check_sig(self, signed):
+    def check_sig(self, signed, echo=True):
         self.__gather_file_info_win(signed)
         if self.target_info['CertLOC'] == 0 or self.target_info['CertSize'] == 0:
             # not signed
-            Console.auto_line("[-] File not signed!")
+            if echo:
+                Console.auto_line("[-] File not signed!")
             return False
         else:
-            Console.auto_line("[+] File is signed!")
+            if echo:
+                Console.auto_line("[+] File is signed!")
             return True
 
     def truncate(self, signed, unsigned):

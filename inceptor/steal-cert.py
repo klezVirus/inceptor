@@ -1,6 +1,7 @@
 import argparse
 import os.path
 import sys
+from pathlib import Path
 
 from signers.SigThief import SigThief
 from utils.console import Console
@@ -9,7 +10,7 @@ if __name__ == "__main__":
     os.system('color')
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--file", dest="inputfile", type=str, required=True,
-                        help="input file", metavar="FILE")
+                        help="input file or directory (check)", metavar="FILE")
     parser.add_argument('-a', '--action', dest='action', choices=SigThief.ACTIONS, required=True,
                         help='Action to perform on input file')
     parser.add_argument('-o', '--output', dest='outputfile', type=str, required=False,
@@ -33,7 +34,23 @@ if __name__ == "__main__":
         sig_thief.sign(args.inputfile, args.outputfile)
 
     elif args.action == "check":
-        sig_thief.check_sig(args.inputfile)
+        if os.path.isfile(args.inputfile):
+            sig_thief.check_sig(args.inputfile)
+        elif os.path.isdir(args.inputfile):
+            directory = Path(args.inputfile).absolute()
+            for file in os.listdir(directory):
+                print(f"[*] {file}: ", end='')
+                absolute_path = directory.joinpath(file)
+                if os.path.isfile(absolute_path) and os.path.splitext(file)[1].lower() in [".dll", ".exe"]:
+                    if sig_thief.check_sig(absolute_path, echo=False):
+                        Console.success_line("Signed")
+                    else:
+                        Console.fail_line("Not signed")
+                else:
+                    Console.info_line("Skipped")
+        else:
+            print("[-] Wrong path")
+            exit(1)
 
     elif args.action == "add":
         if not certificate_file or not os.path.isfile(certificate_file):
