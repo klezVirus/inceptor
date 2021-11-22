@@ -21,7 +21,7 @@ class TemplateFactory:
     def get_module_template(obj, language, _filter: Filter = None):
         directory = obj.__class__.__name__.lower().replace("module", "")
         path = Config().get_path("DIRECTORIES", "templates").joinpath(language.name.lower()).joinpath("modules").joinpath(directory)
-        template = TemplateFactory.from_path(path, language=language, _filter=_filter, is_module=True)
+        template = TemplateFactory.from_path(path, language=language, _filter=None, is_module=True)
         if not template:
             return FileNotFoundError(f"{path} not found")
         return template
@@ -39,6 +39,11 @@ class TemplateFactory:
     def from_path(path, language=Language.CSHARP, _filter: Filter = None, is_module=False):
         allfiles = []
         temp = ""
+        if Config().get_boolean("DEBUG", "WRITER"):
+            Console.warn_line(f"[DEBUG] Loading from: {path}")
+            Console.warn_line(f"[DEBUG] With filter:")
+            Console.warn_line(f"  [>] Include: {_filter.include}")
+            Console.warn_line(f"  [>] Exclude: {_filter.exclude}")
         if os.path.isfile(path):
             return Template(path=path, language=language)
         elif os.path.isdir(path):

@@ -9,5 +9,8 @@ wiki
 .idea
 temp
 certs/**
+backup/**
 history.txt
 artifacts
+*.ico
+*.def

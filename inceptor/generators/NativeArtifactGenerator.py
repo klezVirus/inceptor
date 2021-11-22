@@ -370,6 +370,8 @@ class NativeArtifactGenerator(Generator):
             self.finalise_dll()
         step += 1
         Console.auto_line(f"[*] Phase {step}: Cleaning up...")
+        if Config().get_boolean("DEBUG", "developer"):
+            input()
         self.clean()
         Console.auto_line(f"[+] Native Artifact Generator Finished At {datetime.utcnow()}")
         return artifact

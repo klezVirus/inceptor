@@ -20,7 +20,6 @@ class DinvokeModule(TemplateModule):
         # Dereference kwargs
         while "kwargs" in kwargs.keys():
             kwargs = kwargs["kwargs"]
-        print(kwargs)
         language = kwargs["language"]
         arch = kwargs["arch"]
 

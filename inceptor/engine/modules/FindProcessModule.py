@@ -107,9 +107,6 @@ class FindProcessModule(TemplateModule):
 
         process = ",".join(process)
 
-        if dinvoke or syscalls:
-            Console.warn_line("[WARNING] Find process still doesn't support syscalls and manual mapping")
-
         if not pinject:
             Console.auto_line(f"[-] {self.__class__.__name__} requires (-P|--pinject)!")
             sys.exit(1)

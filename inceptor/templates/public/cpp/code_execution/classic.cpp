@@ -93,6 +93,8 @@ int main()
     //####ANTIDEBUG####
     //####ARGS####
     //####SELF_DELETE####
+    //####UNHOOK####
+
     PsychoBlast(NULL);
 }
 

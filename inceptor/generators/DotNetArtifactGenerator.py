@@ -194,6 +194,8 @@ class DotNetArtifactGenerator(Generator):
         for res in self.writer.resources.memory:
             # For the moment, we just considering ICONs, but we'll need to implement
             if res.resource_type == ResourceType.ICO:
+                print(res.path)
+                input()
                 self.compiler.set_icon(icon=res.path)
         self.compiler.compile(self.writer.source_files)
 

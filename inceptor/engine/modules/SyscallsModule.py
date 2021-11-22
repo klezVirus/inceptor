@@ -2,6 +2,7 @@ import os
 import shutil
 import sys
 import tempfile
+import in_place
 
 from compilers.ClCompiler import ClCompiler
 from compilers.LibCompiler import LibCompiler
@@ -76,6 +77,14 @@ class SyscallsModule(TemplateModule):
 
         whispers = SysWhispers()
         whispers.generate(basename=syscalls_basepath)
+        syscall_opcode = Config().get("SYSCALLS", "syscall_op_override")
+        if syscall_opcode != "":
+
+            with in_place.InPlace(f"{syscalls_basepath}.asm") as file:
+                content = file.read()
+                content = content.replace("syscall", syscall_opcode)
+                file.write(content)
+
         return None
 
     def build(self, **kwargs):

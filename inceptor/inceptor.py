@@ -79,7 +79,7 @@ inceptor: A Windows-based PE Packing framework designed to help
         '-P', '--pinject', required=False, action='store_true', default=False,
         help='Use a process injection template')
     native_parser.add_argument(
-        '-P0', '--process', required=False, type=str, default=False,
+        '-PN', '--process', required=False, type=str, action='append',
         help='Inject into a specific process (Image Name)')
     native_parser.add_argument(
         '--arch', required=False, type=str, choices=["x86", "x64"], default="x64", help='Architecture')
@@ -130,7 +130,7 @@ inceptor: A Windows-based PE Packing framework designed to help
         '-P', '--pinject', required=False, action='store_true', default=False,
         help='Use a process injection template')
     dotnet_parser.add_argument(
-        '-P0', '--process', required=False, type=str, default=False,
+        '-PN', '--process', required=False, type=str, action='append',
         help='Inject into a specific process (Image Name)')
     dotnet_parser.add_argument(
         '-e', '--encoder', action='append', required=False, default=None, help='Encoder(s) to be used')
@@ -207,7 +207,7 @@ inceptor: A Windows-based PE Packing framework designed to help
         '-P', '--pinject', required=False, action='store_true', default=False,
         help='Use a process injection template')
     powershell_parser.add_argument(
-        '-P0', '--process', required=False, type=str, default=False,
+        '-PN', '--process', required=False, type=str, action='append',
         help='Inject into a specific process (Image Name)')
     actions = ["native", "dotnet", "powershell"]
 
@@ -255,7 +255,7 @@ inceptor: A Windows-based PE Packing framework designed to help
 
     # Let's record the last command for other uses
     with open(HISTORY, "a") as history:
-        history.write("python " + " ".join(sys.argv) + "\n")
+        history.write("\r\npython " + " ".join(sys.argv))
 
     if filetype == "dll" and isDotNet(binary_abs_path) and not (args.function and args.classname):
         Console.auto_line("[-] .NET DLLs require to specify both class and method names")
