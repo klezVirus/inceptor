@@ -12,6 +12,8 @@ from engine.component.CodeComponent import CodeComponent
 from engine.component.ShellcodeRetrievalComponent import ShellcodeRetrievalComponent
 from engine.component.UnookComponent import UnhookComponent
 from engine.component.UsingComponent import UsingComponent
+from engine.enums.Enums import LinkingMode
+from engine.modules.AdditionalSourceModule import AdditionalSourceModule
 from engine.modules.TemplateModule import TemplateModule, ModuleNotCompatibleException
 from enums.Language import Language
 from utils.utils import get_project_root, get_temporary_file, static_random_ascii_string
@@ -40,6 +42,7 @@ class ShellcodeRetrievalModule(TemplateModule, ABC, IShellCodeRetrievalModule):
         arch = kwargs["arch"]
         shellcode = kwargs["shellcode"]
         name = kwargs["name"] if "name" in kwargs.keys() else "ShellcodeRetrieval"
+        linking_mode = kwargs["linking_mode"] if "linking_mode" in kwargs.keys() else LinkingMode.LIBRARY
 
         # Whatever the language is, we'll need a source code file
         source = get_temporary_file(ext=TemplateModule.get_extension_by_language(language=language))
@@ -60,8 +63,6 @@ class ShellcodeRetrievalModule(TemplateModule, ABC, IShellCodeRetrievalModule):
         class_name = static_random_ascii_string(min_size=3, max_size=10)
         # We will need a function
         function_name = static_random_ascii_string(min_size=3, max_size=10)
-        # We will also need an alternate data stream name
-        ads = static_random_ascii_string(min_size=3, max_size=10)
 
         # Now, we can fill the data for generate and build
         kwargs = {
@@ -75,17 +76,21 @@ class ShellcodeRetrievalModule(TemplateModule, ABC, IShellCodeRetrievalModule):
             "arch": arch,
             "source": source,
             "header": header,
-            "shellcode": shellcode
+            "shellcode": shellcode,
+            "linking_mode": linking_mode
         }
 
-        # We can already update the libraries to contain the DLL/LIB
-        libraries = [library]
+        if linking_mode == LinkingMode.LIBRARY:
+            # We can already update the libraries to contain the DLL/LIB
+            libraries = [library]
 
         # Setup shellcode length
         self.shellcode_length = len(shellcode)
 
         kwargs["template"], kwargs["args"] = self.generate(**kwargs)
-        self.build(**kwargs)
+
+        if linking_mode == LinkingMode.LIBRARY:
+            self.build(**kwargs)
 
         if language == Language.CPP:
             header = header.replace('\\', '\\\\')
@@ -107,6 +112,8 @@ class ShellcodeRetrievalModule(TemplateModule, ABC, IShellCodeRetrievalModule):
         else:
             raise ModuleNotCompatibleException()
         super().__init__(name=name, libraries=libraries, components=components, arch=arch)
+        if linking_mode == LinkingMode.SOURCE:
+            self.additional_modules.append(AdditionalSourceModule(content=None, path=source))
 
     def generate(self, **kwargs):
         # We recollect all details from kwargs

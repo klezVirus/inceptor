@@ -133,11 +133,14 @@ inceptor: A Windows-based PE Packing framework designed to help
         '-PN', '--process', required=False, type=str, action='append',
         help='Inject into a specific process (Image Name)')
     dotnet_parser.add_argument(
+        '-L', '--linking-mode', required=False, type=str, default="L",
+        help='Select if linking modules using DLL packing or by adding source (less noise)')
+    dotnet_parser.add_argument(
         '-e', '--encoder', action='append', required=False, default=None, help='Encoder(s) to be used')
     dotnet_parser.add_argument(
         '-a', '--compiler-args', required=False, type=str, default=None, help='Compiler arguments')
     dotnet_parser.add_argument(
-        '-C', '--compiler', required=False, choices=["csc"], default="csc", help='Compiler to use')
+        '-C', '--compiler', required=False, choices=["csc", "msbuild"], default="csc", help='Compiler to use')
     dotnet_parser.add_argument(
         '-p', '--params', required=False, type=str, default=None, help='Params to pass to the wrapped .NET executable')
     dotnet_parser.add_argument(
@@ -295,6 +298,7 @@ inceptor: A Windows-based PE Packing framework designed to help
     elif action == "dotnet":
         args = dotnet_parser.parse_args(args=sys.argv[start:])
         generator = DotNetArtifactGenerator(file=binary_abs_path,
+                                            compiler=args.compiler,
                                             chain=chain,
                                             outfile=args.outfile,
                                             transformer=args.transformer,
@@ -314,7 +318,8 @@ inceptor: A Windows-based PE Packing framework designed to help
                                             clone=args.clone,
                                             domain=args.sign_domain,
                                             offline=args.sign_offline,
-                                            steal_from=args.sign_steal
+                                            steal_from=args.sign_steal,
+                                            linking_mode=args.linking_mode
                                             )
 
     elif action == "powershell":

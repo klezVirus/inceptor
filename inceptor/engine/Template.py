@@ -140,7 +140,9 @@ class Template:
     def generate(self, shellcode=None):
         raw_template = base64.b64decode(self.template).decode()
         for c in self.components:
-            #
+            # Is this something we should replace in the main template?
+            if not hasattr(c, "placeholder_style"):
+                continue
             c.placeholder_style(language=self.language)
             # Avoids duplicating imports
             if isinstance(c, UsingComponent):

@@ -12,15 +12,29 @@ from engine.Filter import Filter
 from engine.Template import Template
 from enums.Language import Language
 from utils.console import Console
-from utils.utils import get_project_root, isDotNet
+from utils.utils import get_project_root, isDotNet, get_temporary_file
 
 
 class TemplateFactory:
 
     @staticmethod
-    def get_module_template(obj, language, _filter: Filter = None):
+    def map_directory(path) -> dict:
+        mapping = {}
+        if not os.path.isdir(path):
+            return mapping
+        for sub_path in path.rglob('*.cs'):
+            mapping[sub_path] = get_temporary_file(ext=".cs")
+        return mapping
+
+    @staticmethod
+    def get_module_templates_path(obj, language):
         directory = obj.__class__.__name__.lower().replace("module", "")
         path = Config().get_path("DIRECTORIES", "templates").joinpath(language.name.lower()).joinpath("modules").joinpath(directory)
+        return path
+
+    @staticmethod
+    def get_module_template(obj, language, _filter: Filter = None):
+        path = TemplateFactory.get_module_templates_path(obj, language)
         template = TemplateFactory.from_path(path, language=language, _filter=None, is_module=True)
         if not template:
             return FileNotFoundError(f"{path} not found")

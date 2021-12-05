@@ -127,7 +127,7 @@ namespace Akuma
                 string DllName = Marshal.PtrToStringAnsi(dllNamePTR);
                 if (DllName == "") { break; }
 
-                IntPtr handle = DynamicInvoke.Generic.LoadModuleFromDisk(DllName);
+                IntPtr handle = DInvoke.DynamicInvoke.Generic.LoadModuleFromDisk(DllName);
                 k32.CheckNullPtr(handle, "LoadLibrary call");
 
                 Console.WriteLine("[*] Loaded {0}", DllName);
@@ -200,7 +200,7 @@ namespace Akuma
                             where t.Name == fname
                             select t).FirstOrDefault();
                 this.CheckNull(type, fname + " not found");
-                var p = DynamicInvoke.Generic.GetLibraryAddress(this.name, fname, true);
+                var p = DInvoke.DynamicInvoke.Generic.GetLibraryAddress(this.name, fname, true);
                 this.CheckNullPtr(p, fname);
                 var x = Marshal.GetDelegateForFunctionPointer(p, type);
                 this.CheckNull(x, "GetDelegateForFunctionPointer");

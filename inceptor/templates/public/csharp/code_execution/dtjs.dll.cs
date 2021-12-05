@@ -13,12 +13,12 @@ public class StreetFighter
 
     public StreetFighter()
     {
-        var ryu = new Ryu.Ryu(new string[]{});
+        var ryu = new Inceptor.Ryu(new string[]{});
     }
 
 }
 
-namespace Ryu
+namespace Inceptor
 {
 
     public class Ryu

@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 //####USING####
 
 
-namespace SatsuiRyu
+namespace Inceptor
 {
 
     //####CODE####
@@ -95,7 +95,7 @@ namespace SatsuiRyu
                             where t.Name == fname
                             select t).FirstOrDefault();
                 this.CheckNull(type, fname + " not found");
-                var p = DynamicInvoke.Generic.GetLibraryAddress(this.name, fname, true);
+                var p = DInvoke.DynamicInvoke.Generic.GetLibraryAddress(this.name, fname, true);
                 this.CheckNullPtr(p, fname);
                 var x = Marshal.GetDelegateForFunctionPointer(p, type);
                 this.CheckNull(x, "GetDelegateForFunctionPointer");

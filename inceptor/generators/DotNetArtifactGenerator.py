@@ -6,6 +6,7 @@ import traceback
 from datetime import datetime
 from pathlib import Path
 
+from compilers.Compiler import Compiler
 from compilers.CscCompiler import CscCompiler
 from compilers.ILPacker import ILPacker
 from config.Config import Config
@@ -16,6 +17,7 @@ from encoders.EncoderChain import EncoderChain
 from encoders.HexEncoder import HexEncoder
 from engine.CodeWriter import CodeWriter
 from engine.Filter import Filter
+from engine.enums.Enums import LinkingMode
 from engine.structures.enums.ResourceType import ResourceType
 from enums.Language import Language
 from generators.Generator import Generator
@@ -28,6 +30,7 @@ from utils.utils import get_project_root, file_signature, shellcode_signature, s
 class DotNetArtifactGenerator(Generator):
     def __init__(self,
                  file: str = None,
+                 compiler: str = "csc",
                  chain: EncoderChain = None,
                  outfile: str = None,
                  transformer: str = None,
@@ -47,7 +50,8 @@ class DotNetArtifactGenerator(Generator):
                  clone: str = None,
                  domain: str = None,
                  offline: bool = False,
-                 steal_from: str = None
+                 steal_from: str = None,
+                 linking_mode: str = "L"
                  ):
         super().__init__(file=file, chain=chain)
         # Not needed anymore
@@ -73,7 +77,7 @@ class DotNetArtifactGenerator(Generator):
         self.set_architectures(arch)
         self.additional_args = cargs
 
-        self.compiler = CscCompiler(aargs=self.additional_args, arch=self.arch)
+        self.compiler = Compiler.from_name(compiler, args={}, arch=self.arch, aargs=self.additional_args)
 
         filename, ext = os.path.splitext(outfile)
         filename = os.path.basename(filename)
@@ -110,7 +114,7 @@ class DotNetArtifactGenerator(Generator):
 
         self.is_packed = False
         self.dependencies = ""
-
+        self.linking_mode = LinkingMode.from_str(linking_mode)
         # Replaced write creation with writer parameter saving
         self.writer = None
         self.file = file
@@ -308,6 +312,7 @@ class DotNetArtifactGenerator(Generator):
             modules=self.modules,
             converter=self.transformer,
             arch=self.arch,
+            linking_mode=self.linking_mode,
             shellcode=final_shellcode
         )
         self.load_writer_chain()

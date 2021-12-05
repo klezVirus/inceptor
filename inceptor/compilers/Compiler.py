@@ -71,10 +71,11 @@ class Compiler(ABC):
                 print(output.decode())
         except subprocess.CalledProcessError as e:
             for line in e.output.decode().split("\n"):
-                if re.search(r"error", line):
+                if re.search(r"error", line, re.IGNORECASE):
                     print(f"  [-] Error: {line}")
-                    raise Exception("Compiler Error")
-            return False
+                if re.search(r"warnin", line, re.IGNORECASE):
+                    print(f"  [-] Warning: {line}")
+            raise Exception("Compiler Error")
         return True
 
     @staticmethod
