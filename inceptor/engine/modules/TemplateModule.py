@@ -5,12 +5,17 @@ from abc import abstractmethod
 from pydoc import locate
 
 from config.Config import Config
+from engine.enums.Enums import LinkingMode
 from engine.structures.ResourceSet import ResourceSet
 from enums.Architectures import Arch
 from enums.Language import Language
 
 
 class ModuleNotCompatibleException(Exception):
+    pass
+
+
+class ModuleLinkingModeException(Exception):
     pass
 
 
@@ -35,6 +40,8 @@ class TemplateModule:
         self.resources = resources
         if not resources:
             self.resources = ResourceSet()
+        self.supported_linking_modes = [LinkingMode.LIBRARY]
+        self.additional_modules = []
 
     def add_component(self, component):
         self.components.append(component)
@@ -55,7 +62,9 @@ class TemplateModule:
             "dinvoke": True,
             "process": "",
             "pinject": True,
-            "arch": Arch.x64
+            "arch": Arch.x64,
+            "shellcode": None,
+            "linking_mode": LinkingMode.LIBRARY
         }
         modules_path = str(Config().get_path("DIRECTORIES", "MODULES"))
         all_files = [

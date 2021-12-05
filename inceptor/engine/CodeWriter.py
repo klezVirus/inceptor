@@ -8,6 +8,7 @@ from encoders.EncoderChain import EncoderChain
 from engine.Filter import Filter
 from engine.Template import Template
 from engine.TemplateFactory import TemplateFactory
+from engine.enums.Enums import LinkingMode
 from engine.modules.AssemblyInfoModule import AssemblyInfoModule
 from engine.modules.IShellcodeRetrievalModule import IShellcodeRetrievalModule
 from engine.modules.ShellcodeRetrievalModule import ShellcodeRetrievalModule
@@ -29,6 +30,7 @@ class CodeWriter:
                  _filter: Filter = None,
                  modules: list = None,
                  arch: str = "x64",
+                 linking_mode: LinkingMode = LinkingMode.LIBRARY,
                  shellcode: bytes = None):
         self.debug = Config().get_boolean("DEBUG", "writer")
         self.additional_sources = []
@@ -46,7 +48,8 @@ class CodeWriter:
             "process": process,
             "pinject": pinject,
             "arch": self.arch,
-            "shellcode": shellcode
+            "shellcode": shellcode,
+            "linking_mode": linking_mode
         }
 
         modules_objects = []
@@ -170,6 +173,8 @@ class CodeWriter:
             if self.debug:
                 Console.auto_line(f"[DEBUG] Loading module {module.name}")
             self.template.add_module(module)
+            for m in module.additional_modules:
+                self.template.add_module(m)
         if commit:
             self.template.process_modules()
 

@@ -23,7 +23,11 @@ function Invoke-Demo{
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [String]
         [Alias('FullName')]
-        $FilePath
+        $FilePath,
+        [Parameter(ValueFromPipelineByPropertyName)]
+        [switch]
+        $ProcessInjection
+
     )
 
     if (-not (Test-Path -Path $FilePath)) {
@@ -36,25 +40,40 @@ function Invoke-Demo{
 
     # Step 1: Spawn sacrificial process
     # This process will be used to perform the shellcode injection
+    $victim_pid = $null
+    if ($ProcessInjection)
+    {
 
-    Write-Host "[*] Starting Notepad"
-    $pHandle = (Start-Process "notepad.exe" -PassThru)
-    Sleep 1
-    $victim_pid = $pHandle.Id
+        # Step 1: Spawn sacrificial process
+        # This process will be used to perform the shellcode injection
+
+        Write-Host "[*] Starting Notepad"
+        $pHandle = (Start-Process "notepad.exe" -PassThru)
+        Start-Sleep 1
+        $victim_pid = $pHandle.Id
+    }
 
     # Step 2: Start the implant
     # If everyting works fine, the implant should wait 5-15 seconds to execute the code
     # NW: Ensure you've packed the shellcode using the --delay option!!!
 
     Write-Host "[*] Starting code injection demo loader"
-    $demoHandle = (Start-Process "$FileFullPath" -PassThru -Args $victim_pid)
+
+    if($null -eq $victim_pid)
+    {
+        $demoHandle = (Start-Process "$FileFullPath" -PassThru)
+    }
+    else
+    {
+        $demoHandle = (Start-Process "$FileFullPath" -PassThru -Args $victim_pid)
+    }
     Sleep 1
     $demo_pid = $demoHandle.Id
 
     # If you'd like to see the difference between Native and .NET when using Syscalls,
     # add also the hooks for NtAllocateVirtualMemory and NtWriteVirtualMemory
     # $hooked_array = @("NtCreateThreadEx", "NtAllocateVirtualMemory", "NtWriteVirtualMemory")
-    $hooked_array = @("NtCreateThreadEx")
+    $hooked_array = @("NtCreateThreadEx") #, "NtAllocateVirtualMemory", "NtWriteVirtualMemory", "NtProtectVirtualMemory")
     $hooked = [string]::join(" -i ", $hooked_array)
 
     # Step 3: Start frida-trace against the implant, trying to intercept native APIs
@@ -62,8 +81,17 @@ function Invoke-Demo{
 
     Write-Host "[*] Starting frida hooking"
     Write-Host "[*] Intercepting $hooked_array"
-    Start-Process "cmd.exe" -Args "/k frida-trace -x ntdll.dll -i $hooked -p $demo_pid"
+    $SSHandle = (Start-Process "frida-trace" -Args "-X ntdll.dll -i $hooked -p $demo_pid" -PassThru)
 
+    Write-Host "[*] Press a button to stop the demo"
+    Pause
+
+    Stop-Process -Id $SSHandle.Id -Force -ea SilentlyContinue
+    if (-not ($null -eq $victim_pid))
+    {
+        Stop-Process -Id $victim_pid -Force -ea SilentlyContinue
+    }
+    Stop-Process -Id $demoHandle.Id -Force -ea SilentlyContinue
 }
 
 Invoke-Demo -FilePath "$args"

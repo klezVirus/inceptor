@@ -32,7 +32,10 @@ function Invoke-Demo{
         $Dinvoke,
         [Parameter(ValueFromPipelineByPropertyName)]
         [switch]
-        $Generate
+        $Generate,
+        [Parameter(ValueFromPipelineByPropertyName)]
+        [switch]
+        $ProcessInjection
     )
 
     $InceptorPath = (Get-Item '..\..\inceptor.py').FullName
@@ -52,7 +55,6 @@ function Invoke-Demo{
         return
     }
 
-
     # Step 0: Start SylantStrike
 
     Write-Host "[*] Starting SylantStrike hooking"
@@ -63,25 +65,40 @@ function Invoke-Demo{
     $SSHandle = (Start-Process "$SylantStrikeInject" -Args "-d ""$SylantStrikeDll"" -p $ProcessName.exe" -PassThru)
     Start-Sleep 5
 
-    # Step 1: Spawn sacrificial process
-    # This process will be used to perform the shellcode injection
+    $victim_pid = $null
+    if ($ProcessInjection)
+    {
 
-    Write-Host "[*] Starting Notepad"
-    $pHandle = (Start-Process "notepad.exe" -PassThru)
-    Start-Sleep 1
-    $victim_pid = $pHandle.Id
+        # Step 1: Spawn sacrificial process
+        # This process will be used to perform the shellcode injection
 
+        Write-Host "[*] Starting Notepad"
+        $pHandle = (Start-Process "notepad.exe" -PassThru)
+        Start-Sleep 1
+        $victim_pid = $pHandle.Id
+    }
     # Step 2: Start the implant
     # If everyting works fine, the implant should wait 5-15 seconds to execute the code
     # NW: Ensure you've packed the shellcode using the --delay option!!!
 
     Write-Host "[*] Starting code injection demo loader"
-    $demoHandle = (Start-Process "$FileFullPath" -PassThru -Args "--mm --s notepad.exe")
-    Start-Sleep 1
+    if (-not ($null -eq $victim_pid)){
+        $demoHandle = (Start-Process "$FileFullPath" -PassThru -Args "$victim_pid")
+    }
+    else
+    {
+        $demoHandle = (Start-Process "$FileFullPath" -PassThru)
+    }
 
-    Start-Sleep 40
+    Write-Host "[*] Press a button to stop the demo"
+    Pause
+
     Stop-Process -Id $SSHandle.Id -Force -ea SilentlyContinue
-    Stop-Process -Id $victim_pid -Force -ea SilentlyContinue
+    Stop-Process -Name "SylantStrikeInject" -Force -ea SilentlyContinue
+    if (-not ($null -eq $victim_pid))
+    {
+        Stop-Process -Id $victim_pid -Force -ea SilentlyContinue
+    }
     Stop-Process -Id $demoHandle.Id -Force -ea SilentlyContinue
 }
 

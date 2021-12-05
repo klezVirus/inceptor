@@ -102,6 +102,18 @@ def sgn(shellcode, arch="x64"):
     return shellcode
 
 
+def assembly_name(file):
+    if not os.path.isfile(file):
+        raise FileNotFoundError("[-] Missing file")
+    try:
+        cmd = f"powershell -Command [System.Reflection.AssemblyName]::GetAssemblyName('{file}').FullName"
+        # print(cmd)
+        output = subprocess.check_output(cmd).decode().strip()
+        return output
+    except subprocess.CalledProcessError:
+        print("[-] Failed to get assembly name")
+
+
 def isDotNet(filename):
     try:
         pe = PE(filename)

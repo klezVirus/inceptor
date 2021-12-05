@@ -24,7 +24,7 @@ class BlobShellcodeRetrievalModule(ShellcodeRetrievalModule):
     def __init__(self, **kwargs):
         while "kwargs" in kwargs.keys():
             kwargs = kwargs["kwargs"]
-            kwargs["name"] = self.__class__.__name__
+        kwargs["name"] = self.__class__.__name__
         super().__init__(**kwargs)
 
     def craft(self, shellcode, language) -> (str, list, str):

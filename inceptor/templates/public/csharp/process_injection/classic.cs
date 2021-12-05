@@ -77,6 +77,8 @@ namespace Ryu
             }
             Console.WriteLine("[+] Thread succeeded");
 
+            System.Threading.Thread.Sleep(2000);
+
             Win32.CloseHandle(hThread);
             return;
         }

