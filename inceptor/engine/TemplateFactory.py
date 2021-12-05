@@ -41,9 +41,10 @@ class TemplateFactory:
         temp = ""
         if Config().get_boolean("DEBUG", "WRITER"):
             Console.warn_line(f"[DEBUG] Loading from: {path}")
-            Console.warn_line(f"[DEBUG] With filter:")
-            Console.warn_line(f"  [>] Include: {_filter.include}")
-            Console.warn_line(f"  [>] Exclude: {_filter.exclude}")
+            if _filter:
+                Console.warn_line(f"[DEBUG] With filter:")
+                Console.warn_line(f"  [>] Include: {_filter.include}")
+                Console.warn_line(f"  [>] Exclude: {_filter.exclude}")
         if os.path.isfile(path):
             return Template(path=path, language=language)
         elif os.path.isdir(path):
