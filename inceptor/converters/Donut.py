@@ -28,6 +28,8 @@ class Donut(Transformer):
         filename = os.path.basename(os.path.splitext(target)[0])
         target = Path(target).absolute()
         if detect_arch(target) != self.arch:
+            self.set_architecture(detect_arch(target).value)
+        if detect_arch(target) != self.arch:
             raise ArchitectureMismatch(
                 f"The target binary is {detect_arch(target).value}, while donut is running as {self.arch.value}"
             )

@@ -1,7 +1,12 @@
+#include <iostream>
+#include <Windows.h>
+#include <winternl.h>
 #include <psapi.h>
 
 int ####FUNCTION####()
 {
+
+    printf("[*] Unhooking Ntdll module\n");
     // https://www.ired.team/offensive-security/defense-evasion/how-to-unhook-a-dll-using-c++
     HANDLE process = GetCurrentProcess();
     MODULEINFO mi = {};
@@ -42,6 +47,7 @@ int ####FUNCTION####()
     CloseHandle(ntdllFile);
     CloseHandle(ntdllMapping);
     FreeLibrary(ntdllModule);
+    printf("[+] Finished unhooking Ntdll module\n");
 
     return 0;
 }
