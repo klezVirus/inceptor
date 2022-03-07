@@ -1,20 +1,16 @@
-import os
 import sys
 import tempfile
 import traceback
 
-from compilers.ClCompiler import ClCompiler
 from compilers.CscCompiler import CscCompiler
 from config.Config import Config
 from engine.Filter import Filter
-from engine.TemplateFactory import TemplateFactory
+from engine.factories.TemplateFactory import TemplateFactory
 from engine.component.BypassComponent import BypassComponent
 from engine.component.UsingComponent import UsingComponent
-from engine.modules.DinvokeModule import DinvokeModule
 from engine.modules.TemplateModule import TemplateModule, ModuleNotCompatibleException
-from enums.Architectures import Arch
 from enums.Language import Language
-from utils.utils import get_project_root, static_random_ascii_string, get_temporary_file
+from utils.utils import static_random_ascii_string, get_temporary_file
 
 
 class AmsiModule(TemplateModule):

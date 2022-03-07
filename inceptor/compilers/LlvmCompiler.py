@@ -149,3 +149,6 @@ class LlvmCompiler(Compiler):
             f"-mllvm -aesSeed={secrets.token_hex(16)}": None,
             "-w": None
         }
+
+    def set_debug(self):
+        self.args["/DEBUG"] = "FULL"

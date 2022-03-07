@@ -173,3 +173,5 @@ class ClangCompiler(Compiler):
     def set_libraries(self, libs: list):
         self.set_linker_options(libraries=libs)
 
+    def set_debug(self):
+        self.args["/DEBUG"] = "FULL"

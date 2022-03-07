@@ -140,6 +140,8 @@ class Template:
     def generate(self, shellcode=None):
         raw_template = base64.b64decode(self.template).decode()
         for c in self.components:
+            # print(c.placeholder.strip())
+            # print(c.code.strip())
             # Is this something we should replace in the main template?
             if not hasattr(c, "placeholder_style"):
                 continue

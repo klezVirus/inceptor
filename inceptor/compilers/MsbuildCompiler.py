@@ -32,6 +32,7 @@ class MsbuildCompiler(Compiler):
         self.outfile = None
         self.libraries = []
         self.icon = None
+        self.configuration = "Release"
 
     def default_exe_args(self, outfile):
         self.target = "EXE"
@@ -69,7 +70,7 @@ class MsbuildCompiler(Compiler):
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+    <Configuration Condition=" '$(Configuration)' == '' ">{self.configuration}</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">{self.arch}</Platform>
     <ProjectGuid>{{{uuid.uuid4()}}}</ProjectGuid>
     <OutputType>{self.target}</OutputType>
@@ -195,3 +196,6 @@ class MsbuildCompiler(Compiler):
                     print(f"  [-] Warning: {line}")
             raise Exception("Compiler Error")
         return True
+
+    def set_debug(self):
+        self.configuration = "Debug"

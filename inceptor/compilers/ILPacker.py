@@ -17,3 +17,6 @@ class ILPacker(Compiler):
 
     def set_libraries(self, libs: list):
         pass
+
+    def set_debug(self):
+        pass

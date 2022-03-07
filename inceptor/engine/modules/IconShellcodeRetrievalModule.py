@@ -1,8 +1,6 @@
 import os
-import struct
 import traceback
-from abc import ABC, abstractmethod
-from binascii import hexlify, unhexlify
+from binascii import unhexlify
 
 from compilers.ClCompiler import ClCompiler
 from compilers.CscCompiler import CscCompiler
@@ -13,7 +11,6 @@ from config.Config import Config
 from engine.Filter import Filter
 from engine.component.CodeComponent import CodeComponent
 from engine.component.ShellcodeRetrievalComponent import ShellcodeRetrievalComponent
-from engine.component.UnookComponent import UnhookComponent
 from engine.component.UsingComponent import UsingComponent
 from engine.modules.IShellcodeRetrievalModule import IShellcodeRetrievalModule
 from engine.modules.TemplateModule import TemplateModule, ModuleNotCompatibleException
@@ -22,7 +19,7 @@ from engine.structures.Ico import ICO
 from engine.structures.ResourceSet import ResourceSet
 from engine.structures.enums.ResourceType import ResourceType
 from enums.Language import Language
-from utils.utils import get_project_root, get_temporary_file, static_random_ascii_string
+from utils.utils import get_temporary_file, static_random_ascii_string
 
 
 class IconShellcodeRetrievalModule(IShellcodeRetrievalModule):
@@ -150,7 +147,7 @@ class IconShellcodeRetrievalModule(IShellcodeRetrievalModule):
             _filter = None
 
         # Get the module template among the ones matching the filter
-        from engine.TemplateFactory import TemplateFactory
+        from engine.factories.TemplateFactory import TemplateFactory
         template = TemplateFactory.get_srm_template(self, language=language, _filter=_filter)
 
         # Add D/Invoke module before compilation if needed

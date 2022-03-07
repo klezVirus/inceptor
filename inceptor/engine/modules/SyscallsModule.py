@@ -2,6 +2,8 @@ import os
 import shutil
 import sys
 import tempfile
+import time
+
 import in_place
 
 from compilers.ClCompiler import ClCompiler
@@ -11,6 +13,8 @@ from config.Config import Config
 from engine.component.UsingComponent import UsingComponent
 from engine.modules.TemplateModule import TemplateModule, ModuleNotCompatibleException
 from enums.Language import Language
+from enums.Architectures import Arch
+from enums.SyscallRecoveryType import SyscallRecoveryType
 from utils.console import Console
 
 
@@ -18,13 +22,12 @@ class SyscallsModule(TemplateModule):
     def __init__(self, **kwargs):
 
         while "kwargs" in kwargs.keys():
-            kwargs = kwargs["kwargs"]
+            kwargs = kwargs.get("kwargs")
 
-        dinvoke = kwargs["dinvoke"]
-        language = kwargs["language"]
-        arch = kwargs["arch"]
+        dinvoke = kwargs.get("dinvoke")
+        language = kwargs.get("language")
+        self.arch = kwargs.get("arch")
 
-        self.arch = arch.value
         self.filter_string = "syscalls"
         libraries = []
         if language == Language.CPP:
@@ -37,7 +40,7 @@ class SyscallsModule(TemplateModule):
             syscalls_basepath = tempfile.NamedTemporaryFile(
                 delete=False,
                 dir=str(Config().get_path("DIRECTORIES", "WRITER"))
-            ).name
+            ).name.replace("_", "a")
 
             headers = [f"{syscalls_basepath}.h"]
 
@@ -59,39 +62,46 @@ class SyscallsModule(TemplateModule):
             components = []
         else:
             raise ModuleNotCompatibleException()
-        super().__init__(name="Syscalls", libraries=libraries, components=components, arch=arch)
+        super().__init__(name="Syscalls", libraries=libraries, components=components, arch=self.arch)
 
     def generate(self, **kwargs):
+        debug = Config().get_boolean("DEBUG", "syswhispers")
         syswhisper_version = Config().get_int("SYSCALLS", "syswhispers")
-        syscalls_basepath = kwargs["syscalls_path"]
+        if debug:
+            Console.warn_line(f"[DEBUG] Syswhisper version: V{syswhisper_version}")
 
-        if syswhisper_version == 1 and kwargs["arch"] != "x64":
-            Console.fail_line(f'[-] Syswhisper v1 does not support {kwargs["arch"]}')
-            sys.exit(1)
-        elif syswhisper_version == 1:
-            from syscalls.syswhispers.syswhispers import SysWhispers
-        elif syswhisper_version == 2 and kwargs["arch"] != "x64":
-            from syscalls.syswhispersv2_x86.syswhispers import SysWhispers
-        else:
-            from syscalls.syswhispersv2.syswhispers import SysWhispers
+        syscalls_basepath = kwargs.get("syscalls_path")
+        recovery = SyscallRecoveryType.from_name_or_default(kwargs.get("recovery"))
 
-        whispers = SysWhispers()
-        whispers.generate(basename=syscalls_basepath)
-        syscall_opcode = Config().get("SYSCALLS", "syscall_op_override")
-        if syscall_opcode != "":
+        # SysWhispers3 is the definitive version of SysWhispers (at the moment xD)
+        from syscalls.syswhispersv3.syswhispers import SysWhispers
 
-            with in_place.InPlace(f"{syscalls_basepath}.asm") as file:
-                content = file.read()
-                content = content.replace("syscall", syscall_opcode)
-                file.write(content)
+        verbose = Config().get_boolean("DEBUG", "SYSWHISPERS")
+        debug = Config().get_boolean("SYSCALLS", "debug")
+        syscall_instruction = Config().get("SYSCALLS", "syscall_op_override")
+        if not syscall_instruction or syscall_instruction == "":
+            syscall_instruction = "syscall"
+        whispers = SysWhispers(
+            arch=self.arch,
+            recovery=SyscallRecoveryType.EGG_HUNTER,
+            syscall_instruction=syscall_instruction,
+            wow64=False,
+            verbose=verbose,
+            debug=debug
+        )
+        while not os.path.isfile(f"{syscalls_basepath}.asm"):
+            whispers.generate(basename=syscalls_basepath)
+            time.sleep(1)
 
+        if debug:
+            input("Press a key to keep going")
         return None
 
     def build(self, **kwargs):
         syscalls_basepath = kwargs["syscalls_path"]
         obj_files = [f"{syscalls_basepath}.0.obj"]
 
-        masm = MasmCompiler(arch=self.arch)
+        masm = MasmCompiler(arch=self.arch.value)
         masm.default_args(outfile=obj_files[0])
 
         masm.compile([f"{syscalls_basepath}.asm"])
@@ -102,7 +112,7 @@ class SyscallsModule(TemplateModule):
         # SysWhisper2 Only
         if os.path.isfile(f"{syscalls_basepath}.c"):
             obj_files.append(f"{syscalls_basepath}.1.obj")
-            cl = ClCompiler(arch=self.arch)
+            cl = ClCompiler(arch=self.arch.value)
             cl.default_obj_args(outfile=obj_files[1])
             cl.add_include_directory(str(Config().get_path("DIRECTORIES", "WRITER")))
             cl.compile([f"{syscalls_basepath}.c"])
@@ -110,6 +120,6 @@ class SyscallsModule(TemplateModule):
                 Console.auto_line("[-] Failed to compile syscall C definitions")
                 sys.exit(1)
 
-        libc = LibCompiler(arch=self.arch)
+        libc = LibCompiler(arch=self.arch.value)
         libc.default_args(kwargs["dll"])
         libc.compile(obj_files)

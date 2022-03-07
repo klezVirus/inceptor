@@ -6,16 +6,14 @@ from compilers.CscCompiler import CscCompiler
 from compilers.LibCompiler import LibCompiler
 from config.Config import Config
 from engine.Filter import Filter
-from engine.TemplateFactory import TemplateFactory
+from engine.factories.TemplateFactory import TemplateFactory
 from engine.component.CodeComponent import CodeComponent
 from engine.component.FindProcessComponent import FindProcessComponent
 from engine.component.UsingComponent import UsingComponent
 from engine.modules.TemplateModule import TemplateModule, ModuleNotCompatibleException
 from enums.Language import Language
-from engine.component.BypassComponent import BypassComponent
-from engine.component.DelayComponent import DelayComponent
 from utils.console import Console
-from utils.utils import get_project_root, static_random_ascii_string, get_temporary_file
+from utils.utils import static_random_ascii_string, get_temporary_file
 
 
 class FindProcessModule(TemplateModule):

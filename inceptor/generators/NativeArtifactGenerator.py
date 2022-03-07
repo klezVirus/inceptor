@@ -175,6 +175,9 @@ class NativeArtifactGenerator(Generator):
         self.compiler.default_dll_args(outfile=self.outfiles["dll-temp"])
         self.compiler.set_libraries(libs=self.dll_writer.template.libraries)
         self.compiler.add_include_directory(directory=str(Config().get_temp_folder()))
+        # Generates PDB and other debugging symbols
+        if Config().get_boolean("DEBUG", "executable"):
+            self.compiler.set_debug()
         # Loop for additional resources. Must resolve all of this non-sense using a manager
         for res in self.dll_writer.resources.memory:
             # For the moment, we just considering ICONs, but we'll need to implement
@@ -225,6 +228,9 @@ class NativeArtifactGenerator(Generator):
         self.compiler.default_exe_args(self.outfiles["exe-temp"])
         self.compiler.set_libraries(libs=self.exe_writer.template.libraries)
         self.compiler.add_include_directory(directory=str(Config().get_temp_folder()))
+        # Generates PDB and other debugging symbols
+        if Config().get_boolean("DEBUG", "executable"):
+            self.compiler.set_debug()
         # Loop for additional resources. Must resolve all of this non-sense using a manager
         for res in self.exe_writer.resources.memory:
             # For the moment, we just considering ICONs, but we'll need to implement
@@ -233,6 +239,7 @@ class NativeArtifactGenerator(Generator):
 
         if self.hide_window:
             self.compiler.hide_window()
+
         status = self.compiler.compile([self.exe_writer.outfile] + self.obj_files)
 
         if not os.path.isfile(self.outfiles["exe-temp"]):
@@ -243,7 +250,6 @@ class NativeArtifactGenerator(Generator):
         self.dll_payload = py_bin2sh(self.outfiles["exe-temp"])
 
     def clean(self):
-        # input()
         artifacts = []
         if self.dll_writer:
             self.dll_writer.clean(backup=self.save_source)

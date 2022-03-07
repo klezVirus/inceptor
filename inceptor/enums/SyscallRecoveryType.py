@@ -10,5 +10,5 @@ class SyscallRecoveryType(ExtendedEnum):
     @classmethod
     def from_name_or_default(cls, name):
         _types = dict(map(lambda c: (c.name.lower(), c.value), cls))
-        return _types[name] if name in _types.keys() else SyscallRecoveryType.EMBEDDED
+        return SyscallRecoveryType(_types[name]) if name in _types.keys() else SyscallRecoveryType.EMBEDDED
 

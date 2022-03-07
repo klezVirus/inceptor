@@ -165,3 +165,6 @@ class ClCompiler(Compiler):
         if outfile:
             self.aargs += f' /OUT "{outfile}"'
         self.aargs += f" {other}"
+
+    def set_debug(self):
+        self.args["/DEBUG"] = "FULL"

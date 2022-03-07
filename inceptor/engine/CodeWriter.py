@@ -7,13 +7,12 @@ from config.Config import Config
 from encoders.EncoderChain import EncoderChain
 from engine.Filter import Filter
 from engine.Template import Template
-from engine.TemplateFactory import TemplateFactory
+from engine.factories.ModuleFactory import ModuleFactory
+from engine.factories.TemplateFactory import TemplateFactory
 from engine.enums.Enums import LinkingMode
 from engine.modules.AssemblyInfoModule import AssemblyInfoModule
 from engine.modules.IShellcodeRetrievalModule import IShellcodeRetrievalModule
-from engine.modules.ShellcodeRetrievalModule import ShellcodeRetrievalModule
-from engine.modules.TemplateModule import TemplateModule, ModuleNotCompatibleException, ModuleNotLoadableException, \
-    ModuleNotFoundException
+from engine.modules.TemplateModule import TemplateModule
 from enums.Architectures import Arch
 from enums.Language import Language
 from utils.console import Console
@@ -54,23 +53,12 @@ class CodeWriter:
 
         modules_objects = []
         for m in modules:
-            try:
-                modules_objects.append(
-                    TemplateModule.from_name(
-                        name=m,
-                        **kwargs
-                    )
+            modules_objects.append(
+                ModuleFactory.from_name(
+                    name=m,
+                    **kwargs
                 )
-            except ModuleNotCompatibleException as e:
-                if self.debug:
-                    Console.fail_line(f"[ERROR] Module {m} could not be loaded")
-            except ModuleNotLoadableException as e:
-                if self.debug:
-                    Console.fail_line(f"[ERROR] Module {m} is not loadable")
-            except ModuleNotFoundException as e:
-                if self.debug:
-                    Console.fail_line(f"[ERROR] Module {m} was not found")
-
+            )
         # SRM: Shellcode Retrieval Module
         # Every payload needs necessarily a way to retrieve the shellcode
         if not any([isinstance(m, IShellcodeRetrievalModule) for m in modules_objects]):

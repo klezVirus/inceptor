@@ -1,23 +1,7 @@
-import os
-from abc import ABC, abstractmethod
 from binascii import hexlify
 
-from compilers.ClCompiler import ClCompiler
-from compilers.CscCompiler import CscCompiler
-from compilers.LibCompiler import LibCompiler
-from config.Config import Config
-from engine.Filter import Filter
-from engine.TemplateFactory import TemplateFactory
-from engine.component.AntiDebugComponent import AntiDebugComponent
-from engine.component.CodeComponent import CodeComponent
-from engine.component.DefineComponent import DefineComponent
-from engine.component.UnookComponent import UnhookComponent
-from engine.component.UsingComponent import UsingComponent
 from engine.modules.ShellcodeRetrievalModule import ShellcodeRetrievalModule
-from engine.modules.TemplateModule import TemplateModule, ModuleNotCompatibleException
-from enums.Architectures import Arch
 from enums.Language import Language
-from utils.utils import get_project_root, get_temporary_file, static_random_ascii_string
 
 
 class BlobShellcodeRetrievalModule(ShellcodeRetrievalModule):

@@ -9,26 +9,19 @@ from engine.enums.Enums import LinkingMode
 from engine.structures.ResourceSet import ResourceSet
 from enums.Architectures import Arch
 from enums.Language import Language
-
-
-class ModuleNotCompatibleException(Exception):
-    pass
-
-
-class ModuleLinkingModeException(Exception):
-    pass
-
-
-class ModuleNotLoadableException(Exception):
-    pass
-
-
-class ModuleNotFoundException(Exception):
-    pass
+from engine.exceptions.exceptions import ModuleNotCompatibleException, ModuleNotLoadableException, \
+    ModuleNotFoundException
 
 
 class TemplateModule:
-    def __init__(self, name: str = None, arch=Arch.x64, libraries: list = None, components: list = None, resources: ResourceSet = None):
+    def __init__(
+            self,
+            name: str = None,
+            arch=Arch.x64,
+            libraries: list = None,
+            components: list = None,
+            resources: ResourceSet = None
+    ):
         self.components = components if components else []
         self.libraries = libraries if libraries else []
         self.name = name
@@ -116,7 +109,7 @@ class TemplateModule:
             # print(_class_string)
             _class = locate(_class_string)
             _instance = _class(kwargs=kwargs)
-            if not _instance.loadable or not hasattr(_instance, "loadable"):
+            if not hasattr(_instance, "loadable") or not _instance.loadable:
                 raise ModuleNotLoadableException()
             return _instance
         except ModuleNotCompatibleException:

@@ -7,6 +7,9 @@ from config.Config import Config
 
 class CscCompiler(Compiler):
 
+    def set_debug(self):
+        self.args["/debug+"] = None
+
     def add_include_directory(self, directory):
         pass
 

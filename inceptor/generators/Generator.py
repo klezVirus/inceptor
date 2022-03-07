@@ -1,5 +1,6 @@
 import os
 import shutil
+import subprocess
 import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -10,6 +11,7 @@ from signers.Signer import Signer
 from utils.Koppeling import Koppeling
 from utils.MetaTwin import MetaTwin
 from utils.console import Console
+from utils.utils import get_project_root
 
 
 class Generator(ABC):

@@ -1,16 +1,13 @@
-import os
 import sys
 
 from engine.Filter import Filter
-from engine.TemplateFactory import TemplateFactory
-from engine.component.BypassComponent import BypassComponent
-from engine.component.CodeComponent import CodeComponent
+from engine.factories.TemplateFactory import TemplateFactory
 from engine.component.DelayComponent import DelayComponent
 from engine.component.UsingComponent import UsingComponent
 from engine.modules.TemplateModule import TemplateModule, ModuleNotCompatibleException
 from enums.Language import Language
 from utils.console import Console
-from utils.utils import get_project_root, get_temporary_file, static_random_ascii_string
+from utils.utils import get_temporary_file, static_random_ascii_string
 
 
 class DelayModule(TemplateModule):

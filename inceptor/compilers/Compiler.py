@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from pydoc import locate
 
 from config.Config import Config
+from utils.console import Console
 
 
 class CompilerException(Exception):
@@ -24,6 +25,9 @@ class Compiler(ABC):
             self.path = path
         else:
             self.path = Config().get("COMPILERS", f"{self.name}{arch}_COMPILER")
+        if not os.path.isfile(self.path):
+            Console.auto_line(f"[-] Compiler {self.__class__.__name__} executable not found. Check your config.")
+            sys.exit(1)
         self.prefix_cmd = None
         self.suffix_cmd = None
         self.args = args if args else {}
@@ -75,7 +79,7 @@ class Compiler(ABC):
                     print(f"  [-] Error: {line}")
                 if re.search(r"warnin", line, re.IGNORECASE):
                     print(f"  [-] Warning: {line}")
-            raise Exception("Compiler Error")
+            sys.exit(1)
         return True
 
     @staticmethod
@@ -92,4 +96,8 @@ class Compiler(ABC):
             pass
 
     def set_linker_options(self, outfile=None, libraries: list = None, other=""):
+        pass
+
+    @abstractmethod
+    def set_debug(self):
         pass

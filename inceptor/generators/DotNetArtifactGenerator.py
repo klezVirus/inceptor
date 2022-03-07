@@ -201,6 +201,10 @@ class DotNetArtifactGenerator(Generator):
                 print(res.path)
                 input()
                 self.compiler.set_icon(icon=res.path)
+        # Generates PDB and other debugging symbols
+        if Config().get_boolean("DEBUG", "executable"):
+            self.compiler.set_debug()
+
         self.compiler.compile(self.writer.source_files)
 
         if not os.path.isfile(self.outfiles['temp']):
@@ -216,6 +220,10 @@ class DotNetArtifactGenerator(Generator):
             # For the moment, we just considering ICONs, but we'll need to implement
             if res.resource_type == ResourceType.ICO:
                 continue
+        # Generates PDB and other debugging symbols
+        if Config().get_boolean("DEBUG", "executable"):
+            self.compiler.set_debug()
+
         self.compiler.compile([source])
         if not os.path.isfile(outfile):
             Console.auto_line("  [-] Failure: Error during compilation")
@@ -231,7 +239,7 @@ class DotNetArtifactGenerator(Generator):
                 "*.obj",
                 "*.exp",
                 "*.lib",
-                "*.pdb",
+                # "*.pdb",
                 "*.shc.exe",
                 "*.bin",
                 "coded.txt",

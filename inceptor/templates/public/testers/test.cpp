@@ -14,11 +14,8 @@
 int main(int argc, char** argv)
 {
 
-    const unsigned char raw[] = ####SHELLCODE####;
-    int length = sizeof(raw);
-
-    unsigned char* encoded = (unsigned char*)malloc(sizeof(unsigned char)*length*2);
-    memcpy(encoded, raw, length);
+    int length = ####SHELLCODE_LENGTH####;
+    unsigned char* encoded = ####SHELLCODE####;
 
     //####CALL####
 

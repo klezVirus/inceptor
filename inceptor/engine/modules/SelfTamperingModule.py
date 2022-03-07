@@ -1,25 +1,28 @@
 import os
-import sys
 
+from compilers.ClCompiler import ClCompiler
+from compilers.CscCompiler import CscCompiler
+from compilers.LibCompiler import LibCompiler
+from config.Config import Config
 from engine.Filter import Filter
-from engine.TemplateFactory import TemplateFactory
-from engine.component.BypassComponent import BypassComponent
+from engine.factories.TemplateFactory import TemplateFactory
 from engine.component.CodeComponent import CodeComponent
-from engine.component.DelayComponent import DelayComponent
+from engine.component.FindProcessComponent import FindProcessComponent
+from engine.component.SelfTamperingComponent import SelfTamperingComponent
 from engine.component.UsingComponent import UsingComponent
 from engine.modules.TemplateModule import TemplateModule, ModuleNotCompatibleException
 from enums.Language import Language
 from utils.console import Console
-from utils.utils import get_project_root, get_temporary_file, static_random_ascii_string
+from utils.utils import static_random_ascii_string, get_temporary_file
 
 
-class DelayModule(TemplateModule):
+class SelfTamperingModule(TemplateModule):
     def generate(self, **kwargs):
         # We recollect all details from kwargs
         dinvoke = kwargs["dinvoke"]
         language = kwargs["language"]
-        # source = kwargs["source"]
-        # header = kwargs["header"]
+        source = kwargs["source"]
+        header = kwargs["header"]
 
         _filter = Filter(exclude=["dinvoke"])
         if dinvoke:
@@ -31,8 +34,8 @@ class DelayModule(TemplateModule):
             template.add_module(module)
 
         for k, v in zip(
-                ["import", "class", "function", "seconds", "microseconds"],
-                ["####NAMESPACE####", "####CLASS####", "####FUNCTION####", "####SECONDS####", "####MICROSECONDS####"]
+                ["import", "class", "function"],
+                ["####NAMESPACE####", "####CLASS####", "####FUNCTION####"]
         ):
             template.otf_replace(
                 code=kwargs[k],
@@ -40,16 +43,41 @@ class DelayModule(TemplateModule):
             )
         template.process_modules()
 
-        # with open(source, "w") as source_code:
-        #     source_code.write(template.content)
+        with open(source, "w") as source_code:
+            source_code.write(template.content)
 
-        # with open(header, "w") as source_code:
-        #     source_code.write(f"DWORD {kwargs['function']}();")
+        with open(header, "w") as source_code:
+            source_code.write(f"void {kwargs['function']}(unsigned char[], unsigned char[]);")
 
         return template
 
     def build(self, **kwargs):
-        pass
+        source = kwargs["source"]
+        language = kwargs["language"]
+        library = kwargs["library"]
+        template = kwargs["template"]
+        arch = kwargs["arch"]
+
+        # Let's put an early return on POWERSHELL
+        if language == Language.POWERSHELL:
+            return
+
+        object_file = None
+        if language == Language.CSHARP:
+            compiler = CscCompiler(arch=arch.value)
+            compiler.default_dll_args(outfile=library)
+        else:
+            compiler = ClCompiler(arch=arch.value)
+            object_file = os.path.splitext(library)[0] + ".obj"
+            compiler.default_obj_args(outfile=object_file)
+            compiler.add_include_directory(str(Config().get_path("DIRECTORIES", "WRITER")))
+        # compiler.set_libraries(template.libraries)
+        compiler.compile([source])
+
+        if object_file and os.path.isfile(object_file):
+            libc = LibCompiler(arch=arch.value)
+            libc.default_args(outfile=library)
+            libc.compile([object_file])
 
     def __init__(self, **kwargs):
         # Init variables
@@ -59,27 +87,19 @@ class DelayModule(TemplateModule):
         library = None
 
         # Dereference kwargs
-        kwargs = kwargs["kwargs"]
+        while "kwargs" in kwargs.keys():
+            kwargs = kwargs["kwargs"]
 
         # We get the data we need to compute the template to use
         syscalls = kwargs["syscalls"] if "syscalls" in kwargs.keys() else None
         dinvoke = kwargs["dinvoke"] if "dinvoke" in kwargs.keys() else None
         language = kwargs["language"]
-        secs = kwargs["seconds"]
+
         arch = kwargs["arch"]
 
-        # Let's generate the time as seconds and timeval struct
-        useconds = str((secs - int(secs)) * 1000000)
-        seconds = str(int(secs))
-
+        # Now let's warn everyone that this module still doesn't have a dinvoke/syscall version
         if dinvoke or syscalls:
-            Console.warn_line("[WARNING] Delay still doesn't support syscalls and manual mapping")
-
-        if not seconds:
-            Console.auto_line(f"[-] {self.__class__.__name__} requires (--delay)!")
-            sys.exit(1)
-
-        # THIS PART IS COMPLETELY USELESS RIGHT NOW
+            Console.warn_line("[#] This module has still no support for D/Invoke or Syscalls")
 
         # Whatever the language is, we'll need a source code file
         source = get_temporary_file(ext=TemplateModule.get_extension_by_language(language=language))
@@ -101,8 +121,6 @@ class DelayModule(TemplateModule):
         # We will need a function
         function_name = static_random_ascii_string(min_size=3, max_size=10)
 
-        # END OF THE USELESS PART
-
         # Now, we can fill the data for generate and build
         kwargs = {
             "language": language,
@@ -114,34 +132,31 @@ class DelayModule(TemplateModule):
             "library": library,
             "arch": arch,
             "source": source,
-            "header": header,
-            "seconds": seconds,
-            "microseconds": useconds,
+            "header": header
         }
 
-        # We can already update the libraries to contain the DLL/LIB (If any)
-        libraries = []
+        # We can already update the libraries to contain the DLL/LIB
+        libraries = [library]
 
-        template = kwargs["template"] = self.generate(**kwargs)
+        kwargs["template"] = self.generate(**kwargs)
         self.build(**kwargs)
 
         if language == Language.CPP:
-            # Adding Ws2_32.lib to enable sleep by select
-            # The select() api, however, is not working as expected (not sleeping)
-            libraries = ["Ws2_32.lib"]
+            header = header.replace('\\', '\\\\')
             components = [
-                UsingComponent(code="<windows.h>", language=language),
-                DelayComponent(code=template.content)
+                UsingComponent(f"\"{header}\"", language=language),
+                SelfTamperingComponent(code=f"{function_name}")
             ]
         elif language == Language.CSHARP:
             components = [
-                DelayComponent(code=template.content)
+                UsingComponent(import_name, language=language),
+                SelfTamperingComponent(code=rf"""{import_name}.{class_name}.{function_name}""")
             ]
         elif language == Language.POWERSHELL:
             components = [
-                DelayComponent(code=template.content)
+                CodeComponent(code=open(source).read()),
+                FindProcessComponent(code=rf"""{function_name}""")
             ]
         else:
             raise ModuleNotCompatibleException()
-
-        super().__init__(name="Delay", libraries=libraries, components=components)
+        super().__init__(name="SelfTampering", libraries=libraries, components=components)

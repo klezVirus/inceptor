@@ -1,7 +1,6 @@
 import os
 import traceback
 from abc import ABC, abstractmethod
-from binascii import hexlify
 
 from compilers.ClCompiler import ClCompiler
 from compilers.CscCompiler import CscCompiler
@@ -10,13 +9,12 @@ from config.Config import Config
 from engine.Filter import Filter
 from engine.component.CodeComponent import CodeComponent
 from engine.component.ShellcodeRetrievalComponent import ShellcodeRetrievalComponent
-from engine.component.UnookComponent import UnhookComponent
 from engine.component.UsingComponent import UsingComponent
 from engine.enums.Enums import LinkingMode
 from engine.modules.AdditionalSourceModule import AdditionalSourceModule
 from engine.modules.TemplateModule import TemplateModule, ModuleNotCompatibleException
 from enums.Language import Language
-from utils.utils import get_project_root, get_temporary_file, static_random_ascii_string
+from utils.utils import get_temporary_file, static_random_ascii_string
 
 
 class IShellCodeRetrievalModule:
@@ -144,7 +142,7 @@ class ShellcodeRetrievalModule(TemplateModule, ABC, IShellCodeRetrievalModule):
             _filter = None
 
         # Get the module template among the ones matching the filter
-        from engine.TemplateFactory import TemplateFactory
+        from engine.factories.TemplateFactory import TemplateFactory
         template = TemplateFactory.get_srm_template(self, language=language, _filter=_filter)
 
         # Add D/Invoke module before compilation if needed
