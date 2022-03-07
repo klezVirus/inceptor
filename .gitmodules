@@ -1,3 +1,6 @@
 [submodule "inceptor/obfuscators/powershell/chameleon"]
 	path = inceptor/obfuscators/powershell/chameleon
 	url = https://github.com/klezVirus/chameleon.git
+[submodule "inceptor/syscalls/syswhispersv3"]
+	path = inceptor/syscalls/syswhispersv3
+	url = https://github.com/klezVirus/SysWhisper3.git
