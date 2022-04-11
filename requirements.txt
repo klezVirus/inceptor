@@ -9,3 +9,5 @@ pycryptodome
 pyOpenSSL
 py7zr
 win32-setctime
+keystone-engine
+capstone
