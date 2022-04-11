@@ -51,13 +51,13 @@ class ExportViewer:
                         headers = [x for x in line.rstrip("\r\n").split(" ") if x.strip() != ""]
                         do_print = True
                         continue
-                    elif line.find("Summary") > -1:
+                    elif re.search(r"^\s*Summary\s*$", line):
                         do_print = False
                     if do_print:
                         results.append([x for x in line.rstrip("\r\n").split(" ") if len(x) > 0])
                 from tabulate import tabulate
                 if match:
-                    matcher = re.compile(match) if match else re.compile(r".*")
+                    matcher = re.compile(match, re.IGNORECASE) if match else re.compile(r".*")
                     results = [x for x in results if len(x) == 4 and matcher.search(x[3])]
                 for r in results:
                     if len(r) == 4:

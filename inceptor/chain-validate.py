@@ -85,7 +85,7 @@ if __name__ == '__main__':
             f_component = TemplateModuleComponent(placeholder="####FILE####", code=f"\"{c_outfile}\";")
             template_path = template_dir.joinpath("test.ps1")
             f_component.use_ps_placeholder()
-        writer = CodeWriter(template=str(template_path.absolute()), language=lang, modules=[])
+        writer = CodeWriter(template=str(template_path.absolute()), language=lang, modules=[], shellcode=shellcode)
         writer.template.add_module(TemplateModule(name="FileModule", components=[f_component]))
         writer.load_chain(chain=chain)
         encoded = chain.encode(shellcode)

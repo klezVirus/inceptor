@@ -1,5 +1,6 @@
 import hashlib
 import os
+import platform
 import re
 import secrets
 import subprocess
@@ -182,6 +183,10 @@ def get_temporary_file(ext=None):
         suffix=ext if ext else "",
         delete=True
     ).name
+
+
+def is_os_64bit():
+    return platform.machine().endswith('64')
 
 
 if __name__ == '__main__':

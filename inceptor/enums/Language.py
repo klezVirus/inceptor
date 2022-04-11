@@ -8,10 +8,10 @@ class Language(Enum):
 
     @staticmethod
     def from_string(label):
-        if label.lower() in ["c#", "csharp", "cs"]:
+        if label.lower() in ["c#", "csharp", "cs", ".cs"]:
             return Language.CSHARP
-        elif label.lower() in ["c", "cpp", "c++"]:
+        elif label.lower() in ["c", ".c", "cpp", ".cpp", "c++"]:
             return Language.CPP
-        elif label.lower() in ["ps", "powershell"]:
+        elif label.lower() in ["ps", ".ps1", "powershell"]:
             return Language.POWERSHELL
 

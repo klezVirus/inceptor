@@ -18,3 +18,5 @@ class LinkingMode(Enum):
             return LinkingMode.SOURCE
         else:
             raise LinkingModeNotSelectable
+
+

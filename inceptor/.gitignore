@@ -1,5 +1,6 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
+venv64/
 *.py[cod]
 *$py.class
 debug

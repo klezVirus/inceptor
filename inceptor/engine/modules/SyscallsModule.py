@@ -83,13 +83,13 @@ class SyscallsModule(TemplateModule):
             syscall_instruction = "syscall"
         whispers = SysWhispers(
             arch=self.arch,
-            recovery=SyscallRecoveryType.EGG_HUNTER,
+            recovery=SyscallRecoveryType.JUMPER,
             syscall_instruction=syscall_instruction,
             wow64=False,
             verbose=verbose,
             debug=debug
         )
-        while not os.path.isfile(f"{syscalls_basepath}.asm"):
+        while not os.path.isfile(f"{syscalls_basepath}-asm.{self.arch.value}.asm"):
             whispers.generate(basename=syscalls_basepath)
             time.sleep(1)
 
@@ -104,7 +104,7 @@ class SyscallsModule(TemplateModule):
         masm = MasmCompiler(arch=self.arch.value)
         masm.default_args(outfile=obj_files[0])
 
-        masm.compile([f"{syscalls_basepath}.asm"])
+        masm.compile([f"{syscalls_basepath}-asm.{self.arch.value}.asm"])
         if not os.path.isfile(f"{syscalls_basepath}.0.obj"):
             Console.auto_line("[-] Failed to compile syscall ASM stubs")
             sys.exit(1)
