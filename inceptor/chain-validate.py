@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import shutil
 import subprocess
 import sys
 import argparse
@@ -10,6 +11,7 @@ from pathlib import Path
 
 from compilers.ClCompiler import ClCompiler
 from compilers.CscCompiler import CscCompiler
+from compilers.ILPacker import ILPacker
 from config.Config import Config
 from converters.Loader import Loader
 from encoders.EncoderChain import EncoderChain
@@ -35,6 +37,16 @@ def clean(files):
         for wildcard in wildcards:
             cmd = f"del /F /Q \"{os.path.join(base_path, wildcard)}\""
             subprocess.call(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def pack_exe(infile, outfile, libraries):
+    packer_args = {
+        "/target": "exe",
+        "/out": f'"{outfile}"'
+    }
+    packer = ILPacker(args=packer_args)
+    packer.compile([infile] + libraries)
+    shutil.move(outfile, infile)
 
 
 if __name__ == '__main__':
@@ -98,6 +110,13 @@ if __name__ == '__main__':
         if not os.path.isfile(compiled_file):
             print("[-] Error generating encoder file")
             sys.exit(1)
+
+        if len(writer.template.libraries) > 0 and lang == Language.CSHARP:
+            pack_exe(compiled_file, compiled_file + "2", writer.template.libraries)
+            if not os.path.isfile(compiled_file):
+                print("[-] Error generating encoder file")
+                sys.exit(1)
+
         loader = Loader()
         cmd = compiled_file
         if lang == Language.POWERSHELL:
@@ -125,3 +144,4 @@ if __name__ == '__main__':
             print(f"  [*] Shellcode: {shellcode}")
 
         clean([compiled_file] + outfiles)
+

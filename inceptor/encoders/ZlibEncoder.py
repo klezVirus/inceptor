@@ -37,7 +37,7 @@ class ZlibEncoder(Encoder):
 
             module.name = self.__class__.__name__
             module.call_component = CallComponent("ZlibEncoder.Decode")
-            module.libraries = [str(Config().get_path("DIRECTORIES", "libs").joinpath(arch.value, "Zlib.Portable.dll"))]
+            module.libraries = [str(Config().get_path("DIRECTORIES", "libs").joinpath("Zlib.Portable.dll"))]
             module.components = [
                 CodeComponent(code)
             ]
