@@ -50,6 +50,12 @@ class Compiler(ABC):
     def add_include_directory(self, directory):
         pass
 
+    def set_compilation_to_asm(self, file):
+        pass
+
+    def set_output_file(self, file):
+        pass
+
     def compile(self, files: list):
         file_arg = ""
         for file in files:
@@ -77,7 +83,7 @@ class Compiler(ABC):
             for line in e.output.decode().split("\n"):
                 if re.search(r"error", line, re.IGNORECASE):
                     print(f"  [-] Error: {line}")
-                if re.search(r"warnin", line, re.IGNORECASE):
+                if re.search(r"warning", line, re.IGNORECASE):
                     print(f"  [-] Warning: {line}")
             sys.exit(1)
         return True

@@ -73,6 +73,15 @@ class ClCompiler(Compiler):
             "/Fe": f'"{outfile}"'
         }
 
+    def set_compilation_to_asm(self, outfile):
+        self.args = {
+            "/permissive-": None,
+            "/GS-": None,
+            "/c": None,
+            "/FA": None,
+            "/Fo": f'"{outfile}.obj"'
+        }
+
     def default_exe_args(self, outfile):
         self.args = {
             "/permissive-": None,

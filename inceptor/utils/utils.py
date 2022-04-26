@@ -185,6 +185,24 @@ def get_temporary_file(ext=None):
     ).name
 
 
+def strip_file_extension(file):
+    return os.path.splitext(file)[0]
+
+
+def format_shellcode(shellcode, n=25):
+    shell_string = ''
+    hex_shellcode = hexlify(shellcode).decode()
+    shellcode = [hex_shellcode[i:i + 2] for i in range(0, len(hex_shellcode), 2)]
+    array_of_arrays = [shellcode[i:i + n] for i in range(0, len(shellcode), n)]
+    for i in range(len(array_of_arrays)):
+        if i == len(array_of_arrays) - 1:
+            shell_string += ", ".join([f"0x{s}" for s in array_of_arrays[i]]) + "\n"
+        else:
+            shell_string += ", ".join(f"0x{s}" for s in array_of_arrays[i]) + ",\n\t"
+    return f'int length = {len(shellcode)};\n' + \
+           f'unsigned char shellcode[] = {{\n\t{shell_string}\t}};'
+
+
 def is_os_64bit():
     return platform.machine().endswith('64')
 
