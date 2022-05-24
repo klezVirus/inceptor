@@ -20,8 +20,7 @@ class MasmCompiler(Compiler):
             "/Zi": None,
             f'/Fo"{outfile}"': None,
             "/W3": None,
-            "/errorReport": "prompt",
-            "/Ta": None
+            "/errorReport": "prompt"
         }
 
     def add_include_directory(self, directory):
