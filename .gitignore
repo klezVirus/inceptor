@@ -2,6 +2,7 @@ venv
 drop
 build
 dist
+code
 *.spec
 .idea
 !metrics/cloc.exe

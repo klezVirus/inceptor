@@ -1,5 +1,6 @@
 frida
 frida-tools
+in_place
 jmespath
 colorama
 pandas
@@ -7,5 +8,6 @@ numpy
 pefile
 pycryptodome
 pyOpenSSL
+pyyaml
 py7zr
 win32-setctime
