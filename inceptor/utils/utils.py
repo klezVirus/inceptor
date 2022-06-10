@@ -189,7 +189,7 @@ def strip_file_extension(file):
     return os.path.splitext(file)[0]
 
 
-def format_shellcode(shellcode, n=25):
+def format_shellcode(shellcode, n=25, variable="shellcode"):
     shell_string = ''
     hex_shellcode = hexlify(shellcode).decode()
     shellcode = [hex_shellcode[i:i + 2] for i in range(0, len(hex_shellcode), 2)]
@@ -200,7 +200,7 @@ def format_shellcode(shellcode, n=25):
         else:
             shell_string += ", ".join(f"0x{s}" for s in array_of_arrays[i]) + ",\n\t"
     return f'int length = {len(shellcode)};\n' + \
-           f'unsigned char shellcode[] = {{\n\t{shell_string}\t}};'
+           f'unsigned char {variable}[] = {{\n\t{shell_string}\t}};'
 
 
 def is_os_64bit():
