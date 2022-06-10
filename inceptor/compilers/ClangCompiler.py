@@ -36,7 +36,7 @@ class ClangCompiler(Compiler):
                 "odbccp32.lib"]
 
     def default_dll_args(self, outfile):
-        default_cl_args = {
+        self.args = {
             "/permissive-": None,
             "/GS": None,
             "/GL": None,
@@ -71,10 +71,9 @@ class ClangCompiler(Compiler):
             "-w": None,
             f'-o "{outfile}"': None
         }
-        self.args = default_cl_args
 
     def default_exe_args(self, outfile):
-        default_cl_args = {
+        self.args = {
             "/permissive-": None,
             "/GS": None,
             "/GL": None,
@@ -104,7 +103,6 @@ class ClangCompiler(Compiler):
             "-w": None,
             f'-o "{outfile}"': None
         }
-        self.args = default_cl_args
 
     def default_obj_args(self, outfile):
         self.args = {
@@ -159,10 +157,12 @@ class ClangCompiler(Compiler):
         return True
 
     def set_linker_options(self, outfile=None, libraries: list = None, other=""):
-        if not self.aargs or self.aargs == "":
-            self.aargs = f'/link '
+        if not self.aargs:
+            self.aargs = ""
+        if not self.aargs.startswith("/link"):
+            self.aargs = f'/link {self.aargs}'
         if libraries:
-            self.aargs = f' /DYNAMICBASE {self.format_libraries(libraries=libraries)}'
+            self.aargs += f' /DYNAMICBASE {self.format_libraries(libraries=libraries)}'
         if outfile:
             self.aargs += f' /OUT "{outfile}"'
         self.aargs += f" {other}"
