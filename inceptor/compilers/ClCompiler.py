@@ -81,6 +81,18 @@ class ClCompiler(Compiler):
             "/FA": None,
             "/Fo": f'"{outfile}.obj"'
         }
+        self.args = {
+            "/permissive-": None,
+            "/GS-": None,
+            "/W4": None,
+            "/TC": None,
+            "/Os": None,
+            "/Zl": None,
+            "/nologo": None,
+            "/c": None,
+            "/FA": None,
+            "/Fo": f'"{outfile}.obj"'
+        }
 
     def default_exe_args(self, outfile):
         self.args = {
@@ -159,18 +171,20 @@ class ClCompiler(Compiler):
         console = "/D \"_CONSOLE\""
         if console in self.args.keys():
             self.args.pop(console)
-            self.set_linker_options(other="/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+            self.set_linker_options(other="/link /SUBSYSTEM:windows /ENTRY:mainCRTStartup")
         elif dll in self.args.keys():
             raise OperationNotSupported(
                 "DLLs don't support hidden windows at compiler level. Consider using SW_HIDE in the template"
             )
         return True
 
-    def set_linker_options(self, outfile=None, libraries: list = None, other: str = ""):
-        if not self.aargs or self.aargs == "":
+    def set_linker_options(self, outfile=None, libraries: list = None, other=""):
+        if self.aargs is None or self.aargs == "":
             self.aargs = f'/link '
+        elif not self.aargs.startswith("/link"):
+            self.aargs = f'/link {self.aargs}'
         if libraries:
-            self.aargs += f' /DYNAMICBASE {self.format_libraries(libraries=libraries)}'
+            self.aargs = f' /DYNAMICBASE {self.format_libraries(libraries=libraries)}'
         if outfile:
             self.aargs += f' /OUT "{outfile}"'
         self.aargs += f" {other}"

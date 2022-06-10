@@ -127,8 +127,10 @@ class LlvmCompiler(Compiler):
         self.set_linker_options(libraries=libs)
 
     def set_linker_options(self, outfile=None, libraries: list = None, other=""):
-        if not self.aargs or self.aargs == "":
+        if self.aargs is None or self.aargs == "":
             self.aargs = f'/link '
+        elif not self.aargs.startswith("/link"):
+            self.aargs = f'/link {self.aargs}'
         if libraries:
             self.aargs = f' /DYNAMICBASE {self.format_libraries(libraries=libraries)}'
         if outfile:
