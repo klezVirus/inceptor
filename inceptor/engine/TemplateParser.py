@@ -48,18 +48,23 @@ class TemplateParser:
         modules = self.attributes.get("modules")
         dinvoke = False
         syscalls = False
+        seconds = 0
 
         if modules:
             dinvoke = len([m for m in modules.keys() if m.lower() == "dinvoke"]) > 0
             syscalls = len([m for m in modules.keys() if m.lower() == "syscalls"]) > 0
+            delay = modules.get("delay")
+
+            if delay:
+                seconds = modules.get("seconds") if modules.get("seconds") is not None else 30
 
         arch = self.attributes.get("arch")
         arch = Arch.from_string(arch if arch else "x64")
-        print(arch)
+        print(f"Implant architecture: {arch}")
         language = Language.from_string(Path(filename).suffix[1:])
         kwargs = {
             "language": language,
-            "seconds": 0,
+            "seconds": seconds,
             "dinvoke": dinvoke,
             "syscalls": syscalls,
             "process": None,
@@ -75,7 +80,7 @@ class TemplateParser:
                 for module_name in self.attributes.get(k):
                     m = ModuleFactory.from_name(module_name, **kwargs)
                     if m:
-                        print(f"Damn! I created module {m}!")
+                        print(f"Created module object {m}!")
 
 
 if __name__ == '__main__':

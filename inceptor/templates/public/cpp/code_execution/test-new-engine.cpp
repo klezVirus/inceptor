@@ -15,6 +15,8 @@ modules:
     parameters:
       - "7730307477303074"
       - "0F05C3909090CCCC"
+  delay:
+    seconds: 30
 compiler:
   name:
     cl
@@ -25,6 +27,8 @@ compiler:
     EXPORTS
     $2
 shellcode:
+  transformer:
+    donut
   format:
     blob
   encoders:
