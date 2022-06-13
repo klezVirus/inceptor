@@ -34,7 +34,7 @@ int Inject(int pid)
 	myNtMapViewOfSection fNtMapViewOfSection = (myNtMapViewOfSection)(GetProcAddress(GetModuleHandleA("ntdll"), "NtMapViewOfSection"));
 	myRtlCreateUserThread fRtlCreateUserThread = (myRtlCreateUserThread)(GetProcAddress(GetModuleHandleA("ntdll"), "RtlCreateUserThread"));
 	SIZE_T size = 4096;
-	LARGE_INTEGER sectionSize = { size };
+	LARGE_INTEGER sectionSize = { (DWORD)size };
 	HANDLE sectionHandle = NULL;
 	PVOID localSectionAddress = NULL, remoteSectionAddress = NULL;
 
