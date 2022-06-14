@@ -1,8 +1,21 @@
+:triangular_flag_on_post: This is the public repository of CrackMapExec, for latest version and updates please consider supporting us through https://porchetta.industries/
+
 <h1 align="center">
 <br>
 <img src=./images/inceptor-logo.png >
 <br>
 </h1>
+
+## :triangular_flag_on_post: Sponsors
+
+If you want to sponsors this project and have the latest updates on CME, latest issues fixed, latest features, please support us on https://porchetta.industries/
+
+## Official Discord Channel
+
+Come hang out on Discord!
+
+[![Porchetta Industries](https://discordapp.com/api/guilds/736724457258745996/widget.png?style=banner3)](https://discord.gg/ycGXUxy)
+
 
 # Table of content
 
