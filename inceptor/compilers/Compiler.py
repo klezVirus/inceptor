@@ -78,9 +78,9 @@ class Compiler(ABC):
                 print(cmd)
             output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
             if Config().get_boolean("DEBUG", "COMPILERS"):
-                print(output.decode())
+                print(output.decode(errors="replace"))
         except subprocess.CalledProcessError as e:
-            for line in e.output.decode().split("\n"):
+            for line in e.output.decode(errors="replace").split("\n"):
                 if re.search(r"error", line, re.IGNORECASE):
                     print(f"  [-] Error: {line}")
                 if re.search(r"warning", line, re.IGNORECASE):
