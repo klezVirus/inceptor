@@ -43,4 +43,6 @@ class Pe2sh(Transformer):
         if not os.path.isfile(outfile):
             Console.auto_line(f"[-] Failed to locate converted file: {outfile}")
             sys.exit(1)
-        return bin2hex4pe2sh(outfile)
+        with open(outfile, "rb") as rb:
+            blob = rb.read()
+        return blob
