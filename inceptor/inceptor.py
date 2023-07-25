@@ -239,9 +239,11 @@ inceptor: A Windows-based PE Packing framework designed to help
     filetype = ext.replace(".", "")
     if filetype == "bin":
         Console.warn_line("[WARNING] File extension '.bin' is not supported, assumed '.raw'")
-        shutil.copy(args.binary, filename + ".raw")
+        ext = ".raw"
+        filetype = ext.replace(".","")
+        shutil.copy(args.binary, filename + ext)
 
-    binary_abs_path = os.path.abspath(args.binary)
+    binary_abs_path = os.path.abspath(filename + ext)
     chain = EncoderChain.from_list(args.encoder)
 
     if args.process:
