@@ -224,7 +224,6 @@ class NativeArtifactGenerator(Generator):
                 "*.lib",
                 "*.pdb",
                 "*.shc.exe",
-                "*.bin",
                 "coded.txt",
                 "*.obfuscated",
                 "*.exe.config"
