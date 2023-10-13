@@ -13,8 +13,9 @@ class LlvmCompiler(Compiler):
     def __init__(self, args=None, aargs=None, arch="x64"):
         self.config = Config()
         self.vcvarsall = self.config.get_path("COMPILERS", "VCVARSALL")
+        self.tools_ver = self.config.get("COMPILERS", "TOOLS_VER")
         super().__init__(None, args=args, aargs=aargs, sep=":", arch=arch)
-        self.prefix_cmd = f'"{self.vcvarsall}" {self.arch}'
+        self.prefix_cmd = f'"{self.vcvarsall}" {self.arch} -vcvars_ver={self.tools_ver}'
 
     def format_libraries(self, libraries: list = None):
         if not libraries or not isinstance(libraries, list):

@@ -88,12 +88,29 @@ def detect_base_path():
             sys.exit(1)
     return available[choice]
 
+def update_tools(base_path):
+    available = [t for t in os.listdir(f"{base_path}\Community\VC\Tools\MSVC")]
+    print(f"[*] Choose the MSVC Tools version:")
+    for n, ver in enumerate(available):
+        print(f"  {n}: {ver}")
+    choice = -1
+    while not (0 <= choice < len(available)):
+        try:
+            choice = int(input("> "))
+        except ValueError:
+            continue
+        except KeyboardInterrupt:
+            sys.exit(1)
+    return available[choice]
+
+
 
 def update_config():
     c = Config()
     base_path = detect_base_path()
     print(base_path)
-
+    tool_ver = update_tools(base_path)
+    c.set("COMPILERS", f"TOOLS_VER", str(tool_ver))
     print("[*] Checking requirements")
 
     if not os.path.isdir(base_path):
@@ -108,7 +125,7 @@ def update_config():
     else:
         print("[+] .NET Framework is installed")
     try:
-        update_compilers(base_path=base_path, config=c, commit=True)
+        update_compilers(base_path=base_path, config=c, commit=True,)
     except KeyboardInterrupt:
         sys.exit(1)
     except:
@@ -138,7 +155,6 @@ def update_config():
     except:
         pass
     print("[+] Finished!")
-
 
 def update_compilers(base_path, config: Config, commit=False):
     c = config
@@ -270,7 +286,7 @@ def update_llvm_compiler(max_recurse=1):
                 elif choice.lower() == "y":
                     download = True
             except:
-                continue
+                pass
         if download:
             max_recurse -= 1
             print("[+] Downloading LLVM, the process may take minutes (~500MB)")
@@ -281,7 +297,9 @@ def update_llvm_compiler(max_recurse=1):
             print(f"[+] Unpacking downloaded file into {str(destination)}")
             with py7zr.SevenZipFile(path, mode='r') as z:
                 z.extractall(path=str(destination))
-        update_llvm_compiler(max_recurse=max_recurse)
+        else:
+            print("No Download")
+        #update_llvm_compiler(max_recurse=max_recurse)
 
 
 def update_signers():
