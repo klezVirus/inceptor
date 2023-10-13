@@ -89,7 +89,7 @@ def detect_base_path():
     return available[choice]
 
 def update_tools(base_path):
-    available = [t for t in os.listdir(f"{base_path}\Community\VC\Tools\MSVC")]
+    available = [t for t in os.listdir(f"{base_path}\\Community\\VC\\Tools\\MSVC")]
     print(f"[*] Choose the MSVC Tools version:")
     for n, ver in enumerate(available):
         print(f"  {n}: {ver}")
