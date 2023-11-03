@@ -125,7 +125,7 @@ def update_config():
     else:
         print("[+] .NET Framework is installed")
     try:
-        update_compilers(base_path=base_path, config=c, commit=True,)
+        update_compilers(base_path=base_path, config=c, commit=True)
     except KeyboardInterrupt:
         sys.exit(1)
     except:
